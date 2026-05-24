@@ -675,9 +675,15 @@
             </div>
             <div class="g2">
               <div><label data-i18n="alarm_name">Alarm Name</label><input id="ar-name" type="text" placeholder="e.g. Cold Chain Breach"/></div>
-              <div>
+              <!-- Temperature: sensor selector (shown for temp alarms) -->
+              <div id="ar-sensor-wrap">
                 <label data-i18n="alarm_sensor">Sensor (blank = all)</label>
                 <select id="ar-sensor"><option value="" data-i18n="pdf_all_sensors">All sensors</option></select>
+              </div>
+              <!-- Speed: GPS device selector (shown for speed alarms) -->
+              <div id="ar-gps-wrap" style="display:none;">
+                <label>Vehicle / GPS device (blank = all)</label>
+                <select id="ar-gps-sensor"><option value="">All vehicles</option></select>
               </div>
             </div>
             <!-- Temperature fields -->
@@ -691,7 +697,13 @@
             </div>
             <!-- Speed fields -->
             <div id="ar-speed-fields" style="display:none;margin-top:8px;">
-              <div><label>Speed limit (km/h)</label><input id="ar-speed" type="number" min="1" max="300" step="1" value="90" placeholder="e.g. 90"/></div>
+              <div class="g2">
+                <div><label>Speed limit (km/h)</label><input id="ar-speed" type="number" min="1" max="300" step="1" value="90" placeholder="e.g. 90"/></div>
+                <div>
+                  <label>Alert delay (minutes)</label>
+                  <div class="drow"><input id="ar-speed-delay" type="number" min="0" step="1" value="0"/><span>min (0 = immediate)</span></div>
+                </div>
+              </div>
               <p class="hint" style="margin-top:6px;">Alert fires when the vehicle exceeds this speed. A new alert will fire once per breach (resets when speed drops below limit).</p>
             </div>
             <button onclick="createAlarmRule()" style="width:auto;padding:7px 18px;margin-top:12px;" data-i18n="alarm_save">Create Alarm Rule</button>
@@ -1474,6 +1486,8 @@ async function doSetPw(){
 
 function enterApp(id, isDemo){
   client=id; isDemoClient=!!isDemo;
+  // Clear stale state from any previous login session
+  shData=[]; fleetData=[]; weeklyData=[]; _gpsDevsCache=[]; _eyeSensCache=[];
   document.getElementById("login-screen").style.display="none";
   document.getElementById("app").classList.add("visible");
   document.getElementById("client-chip").textContent=isDemoClient?id+" (demo)":id;
@@ -1569,6 +1583,7 @@ function _buildMergedDevices(){
   const gpsSidSet=new Set(_gpsDevsCache.map(d=>d.sensor_id));
   const eyeMacSet=new Set(_eyeSensCache.map(s=>s.mac_address));
   const merged=[];
+  const shMap={};for(const s of shData)shMap[s.sensor_id]=s;
   for(const dev of _gpsDevsCache){
     const gFd=fleetMap[dev.sensor_id]||{};
     const eye=eyeByImei[dev.imei];
@@ -1580,13 +1595,16 @@ function _buildMergedDevices(){
     let elapsed=null,status="unknown";
     if(lastSeen){elapsed=Math.round((new Date()-new Date(lastSeen+"Z"))/60000);
       status=elapsed<10?"online":(elapsed<60?"warning":"offline");}
+    // serial_number: prefer gps_devices API value, fall back to sensor_health serial_map value
+    const gpsSerialRaw=dev.serial_number||(shMap[dev.sensor_id]||{}).serial_number||"";
+    const eyeSerialRaw=eye?(eye.serial_number||eye.label||""):"";
     merged.push({
       key:"gps:"+dev.imei,
       stable_id:dev.imei,
       sensor_id:dev.sensor_id,
-      serial:cleanGpsSerial(dev.serial_number||dev.sensor_id||dev.imei),
-      device_label:"GPS-"+cleanGpsSerial(dev.serial_number||dev.sensor_id||dev.imei),
-      device_secondary:eye?("🌡️ "+(eye.serial_number||eye.label||"—")):"",
+      serial:cleanGpsSerial(gpsSerialRaw||dev.sensor_id||dev.imei),
+      device_label:"GPS-"+cleanGpsSerial(gpsSerialRaw||dev.sensor_id||dev.imei),
+      device_secondary:eye?("🌡️ "+(eyeSerialRaw||"—")):"",
       eye:eye||null,
       plate:dev.plate||gFd.plate||"",
       driver_name:gFd.driver_name||(eFd?eFd.driver_name:"")||"",
@@ -1777,9 +1795,9 @@ function renderDeviceTiles(gpsDevs,eyeSens){
     const plate=dev.plate||fd.plate||"";
     const isMoving=fd.is_moving;
     const gpsAgoStr=lastMins!=null?(lastMins<60?lastMins+"m ago":Math.floor(lastMins/60)+"h ago"):"never";
-    // Client-facing identifiers: prefer serial_number; fall back to sensor_id (GPS) / label (EYE)
-    // cleanGpsSerial strips leading "gps-" so we never end up with "GPS-gps-X"
-    const gpsSerial = cleanGpsSerial(dev.serial_number || dev.sensor_id || dev.imei);
+    // Client-facing identifiers: prefer serial_number; fall back to sensor_health serial, then sensor_id
+    const shEntry=(shData.find(s=>s.sensor_id===dev.sensor_id)||{});
+    const gpsSerial = cleanGpsSerial(dev.serial_number||shEntry.serial_number||dev.sensor_id||dev.imei);
     const gpsLabel  = `GPS-${gpsSerial}`;
     const eyeSerial = eye ? (eye.serial_number || eye.label || "") : "";
     const eyeDisplay = eye ? (eyeSerial || "—") : "";
@@ -1845,7 +1863,8 @@ function renderFleetTable(){
     accountedSids.add(dev.sensor_id);
     const eye=eyeByImei[dev.imei];
     const eFd=eye?(fleetMap[eye.mac_address]||{}):null;
-    const serial=cleanGpsSerial(dev.serial_number||dev.sensor_id);
+    const shEntry=(shData.find(s=>s.sensor_id===dev.sensor_id)||{});
+    const serial=cleanGpsSerial(dev.serial_number||shEntry.serial_number||dev.sensor_id);
     const eyeSerial=eye?(eye.serial_number||eye.label||""):"";
     // Merge: prefer EYE for temperature; prefer GPS for location/movement/speed;
     // last_seen = whichever is newest
@@ -1936,6 +1955,8 @@ function renderSensorStatusGrid(){
   if(!el)return;
   if(!shData.length){el.innerHTML='<span style="color:var(--mu);font-size:13px;">No sensors yet</span>';return;}
   const breachSensors=[];
+  const offCount=shData.filter(s=>s.status==="offline").length;
+  const onCount=shData.filter(s=>s.status==="online").length;
   el.innerHTML=shData.map(s=>{
     const col=getSensorColor(s.sensor_id);
     const fd=fleetData.find(f=>f.sensor_id===s.sensor_id)||{};
@@ -1967,15 +1988,13 @@ function renderSensorStatusGrid(){
   }).join("");
   // Count label — only update when no GPS devices (tiles already set the correct label)
   if(!_gpsDevsCache.length){
-    const onCount=shData.filter(s=>s.status==="online").length;
-    const offCount=shData.filter(s=>s.status==="offline").length;
     const cl=document.getElementById("sensor-count-label");
     if(cl) cl.textContent=`${onCount} online${offCount?` · ${offCount} offline`:""}`;
   }
-  // Header badge — use "Sensor X" prefix so "22" isn't misread as a count
+  // Header badge
   const b=document.getElementById("sbadge");
   if(breachSensors.length){
-    const names=breachSensors.map(id=>`Sensor ${id}`).join(", ");
+    const names=breachSensors.map(id=>_prettyLabel(id)||`Sensor ${id}`).join(", ");
     b.textContent=`⚠ ${names}`;b.className="alert";
   } else if(offCount){
     b.textContent=`${offCount} offline`;b.className="alert";
@@ -2357,25 +2376,26 @@ async function loadAlarmRules(){
     const rules=await apiFetchJson(`${API}/alarm_rules/${client}`);
     const el=document.getElementById("alarm-rules-list");
     if(!el)return;
+    const _gpsOpts=()=>_gpsDevsCache.map(d=>{const sn=cleanGpsSerial(d.serial_number||d.sensor_id);const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;return`<option value="${d.sensor_id}">${lbl}</option>`;}).join("");
     if(!rules.length){el.innerHTML='<div class="empty">No alarm rules yet — create one using the Create Rule tab</div>';
-      // Still populate the sensor selector even when no rules exist
+      // Still populate selectors even when no rules exist
       const selE=document.getElementById("ar-sensor");
-      if(selE) selE.innerHTML=`<option value="">All sensors</option>`+_gpsDevsCache.map(d=>{const sn=cleanGpsSerial(d.serial_number||d.sensor_id);const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;return`<option value="${d.sensor_id}">${lbl}</option>`;}).join("")+_eyeSensCache.map(s=>{const sn=s.serial_number||s.label||"EYE Sensor";const p=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;const lbl=p&&p.plate?`${p.plate} (${sn})`:sn;return`<option value="${s.mac_address}">${lbl}</option>`;}).join("");
+      if(selE) selE.innerHTML=`<option value="">All sensors</option>`+_gpsOpts()+_eyeSensCache.map(s=>{const sn=s.serial_number||s.label||"EYE Sensor";const p=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;const lbl=p&&p.plate?`${p.plate} (${sn})`:sn;return`<option value="${s.mac_address}">${lbl}</option>`;}).join("");
+      const selG=document.getElementById("ar-gps-sensor");
+      if(selG) selG.innerHTML=`<option value="">All vehicles</option>`+_gpsOpts();
       return;}
-    // Populate sensor selector with human-readable labels (plate/serial)
+    // Populate sensor/GPS device selectors
     const sel=document.getElementById("ar-sensor");
     if(sel){
-      sel.innerHTML=`<option value="">All sensors</option>`+_gpsDevsCache.map(d=>{
-        const sn=cleanGpsSerial(d.serial_number||d.sensor_id);
-        const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;
-        return`<option value="${d.sensor_id}">${lbl}</option>`;
-      }).join("")+_eyeSensCache.map(s=>{
+      sel.innerHTML=`<option value="">All sensors</option>`+_gpsOpts()+_eyeSensCache.map(s=>{
         const sn=s.serial_number||s.label||"EYE Sensor";
         const paired=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;
         const lbl=paired&&paired.plate?`${paired.plate} (${sn})`:sn;
         return`<option value="${s.mac_address}">${lbl}</option>`;
       }).join("");
     }
+    const selG=document.getElementById("ar-gps-sensor");
+    if(selG) selG.innerHTML=`<option value="">All vehicles</option>`+_gpsOpts();
     el.innerHTML=rules.map(r=>{
       const isSpeed=r.rule_type==="speed";
       const descLine=isSpeed
@@ -2401,21 +2421,39 @@ function updateAlarmTypeUI(){
   const isSpeed=document.getElementById("ar-type-spd")?.checked;
   const tf=document.getElementById("ar-temp-fields");
   const sf=document.getElementById("ar-speed-fields");
+  const sw=document.getElementById("ar-sensor-wrap");
+  const gw=document.getElementById("ar-gps-wrap");
   if(tf)tf.style.display=isSpeed?"none":"block";
   if(sf)sf.style.display=isSpeed?"block":"none";
+  if(sw)sw.style.display=isSpeed?"none":"block";
+  if(gw)gw.style.display=isSpeed?"block":"none";
+  if(isSpeed){
+    // Populate GPS device dropdown
+    const sel=document.getElementById("ar-gps-sensor");
+    if(sel){
+      sel.innerHTML=`<option value="">All vehicles</option>`+_gpsDevsCache.map(d=>{
+        const sn=cleanGpsSerial(d.serial_number||d.sensor_id);
+        const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;
+        return`<option value="${d.sensor_id}">${lbl}</option>`;
+      }).join("");
+    }
+  }
 }
 
 async function createAlarmRule(){
-  const name=document.getElementById("ar-name").value.trim()||(document.getElementById("ar-type-spd")?.checked?"Speed Alarm":"Temperature Alarm");
-  const sensor=document.getElementById("ar-sensor").value;
   const isSpeed=document.getElementById("ar-type-spd")?.checked;
+  const name=document.getElementById("ar-name").value.trim()||(isSpeed?"Speed Alarm":"Temperature Alarm");
+  const sensor=isSpeed
+    ?document.getElementById("ar-gps-sensor").value
+    :document.getElementById("ar-sensor").value;
   const st=document.getElementById("ar-st");
   let payload={name,sensor_id:sensor,rule_type:isSpeed?"speed":"temperature"};
   if(isSpeed){
     const spd=parseFloat(document.getElementById("ar-speed").value);
+    const sdl=parseInt(document.getElementById("ar-speed-delay").value)||0;
     if(isNaN(spd)||spd<=0){st.style.color="var(--red)";st.textContent="Enter a valid speed limit.";return;}
     payload.speed_kmh_limit=spd;
-    payload.min_temp=0;payload.max_temp=200;payload.alert_delay_mins=0;
+    payload.min_temp=0;payload.max_temp=200;payload.alert_delay_mins=sdl;
   } else {
     const mn=parseFloat(document.getElementById("ar-min").value);
     const mx=parseFloat(document.getElementById("ar-max").value);

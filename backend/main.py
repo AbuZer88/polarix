@@ -3623,11 +3623,18 @@ def get_client_ble_sensors(client_id: str, request: Request):
     with engine.connect() as conn:
         rows = conn.execute(text("""
             SELECT bs.id, bs.mac_address, bs.label, bs.battery_level, bs.last_seen,
-                   bsa.device_imei, d.sensor_id AS gps_sensor_id, bsa.assigned_at,
+                   COALESCE(bsa.device_imei, va.imei)            AS device_imei,
+                   COALESCE(d.sensor_id,     d2.sensor_id)       AS gps_sensor_id,
+                   bsa.assigned_at,
                    COALESCE(bs.serial_number,'')
             FROM ble_sensors bs
-            LEFT JOIN ble_sensor_assignments bsa ON bsa.ble_sensor_id=bs.id AND bsa.unassigned_at IS NULL
-            LEFT JOIN device_registry d ON d.imei=bsa.device_imei
+            LEFT JOIN ble_sensor_assignments bsa
+                   ON bsa.ble_sensor_id=bs.id AND bsa.unassigned_at IS NULL
+            LEFT JOIN device_registry d  ON d.imei=bsa.device_imei
+            LEFT JOIN vehicle_assignments va
+                   ON va.client_id=bs.client_id AND va.eye_mac=bs.mac_address
+                  AND va.unassigned_at IS NULL
+            LEFT JOIN device_registry d2 ON d2.imei=va.imei AND d2.client_id=bs.client_id
             WHERE bs.client_id=:cid ORDER BY bs.id"""), {"cid": client_id}).fetchall()
     return [{"id":r[0],"mac_address":r[1],"label":r[2],"battery_level":r[3],
              "last_seen":r[4],"device_imei":r[5] or "","gps_sensor_id":r[6] or "",
