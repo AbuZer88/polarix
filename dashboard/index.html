@@ -2291,7 +2291,7 @@ async function loadAlarmRules(){
     if(!rules.length){el.innerHTML='<div class="empty">No alarm rules yet — create one using the Create Rule tab</div>';
       // Still populate the sensor selector even when no rules exist
       const selE=document.getElementById("ar-sensor");
-      if(selE) selE.innerHTML=`<option value="">All sensors</option>`+_gpsDevsCache.map(d=>{const sn=cleanGpsSerial(d.serial_number||d.sensor_id);const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;return`<option value="${d.sensor_id}">${lbl}</option>`;}).join("")+_eyeSensCache.map(s=>{const sn=s.serial_number||s.label||s.mac_address;const p=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;const lbl=p&&p.plate?`${p.plate} (${sn})`:sn;return`<option value="${s.mac_address}">${lbl}</option>`;}).join("");
+      if(selE) selE.innerHTML=`<option value="">All sensors</option>`+_gpsDevsCache.map(d=>{const sn=cleanGpsSerial(d.serial_number||d.sensor_id);const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;return`<option value="${d.sensor_id}">${lbl}</option>`;}).join("")+_eyeSensCache.map(s=>{const sn=s.serial_number||s.label||"EYE Sensor";const p=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;const lbl=p&&p.plate?`${p.plate} (${sn})`:sn;return`<option value="${s.mac_address}">${lbl}</option>`;}).join("");
       return;}
     // Populate sensor selector with human-readable labels (plate/serial)
     const sel=document.getElementById("ar-sensor");
