@@ -1,5 +1,5 @@
 # Polarix — Full Project Context
-*Last updated: 2026-05-24 (session 4) | For use in Claude Code sessions to resume work without re-reading the whole codebase.*
+*Last updated: 2026-05-24 (session 5) | For use in Claude Code sessions to resume work without re-reading the whole codebase.*
 
 ---
 
@@ -347,7 +347,8 @@ Speed alarm form used the sensor/EYE dropdown instead of a GPS device dropdown. 
 - EYE sensors assigned via Vehicles tab now populate `device_imei` via vehicle_assignments fallback
 - Admin: ✏️ edit buttons on GPS + EYE tables for post-registration serial edits
 - Admin: SIM assign uses dropdown modal (not `prompt()`)
-- Admin: create-client form has min_temp + max_temp fields with defaults (2.0 / 8.0)
+- Admin: GPS devices table has ✏ Assign + 📶 SIM buttons per row (SIM button opens assign-SIM modal with SIM dropdown pre-set to that IMEI)
+- Admin: create-client form min_temp + max_temp fields are blank/optional with placeholder (no hardcoded 2.0/8.0 defaults — client sets their own thresholds)
 - Admin: client list pagination — Prev/Next, Page X/Y, total count
 - Staging: orange banner in both dashboards when ENVIRONMENT=staging
 - Offline/alert banner: shows plate+serial, not raw sensor_id
@@ -355,3 +356,43 @@ Speed alarm form used the sensor/EYE dropdown instead of a GPS device dropdown. 
 - Mobile: bottom nav bar (5 tabs), full-screen modals, 44px touch targets, stacked forms
 - DEPLOY.md: Railway pause/resume instructions added
 - Railway: both production and staging can be suspended to save costs (Settings → Danger Zone → Suspend)
+
+---
+
+## Label Format Standard (enforced session 5, commit 1d68b16)
+
+All display identifiers follow this format everywhere in both dashboards:
+
+| Device | Format | Example |
+|---|---|---|
+| GPS tracker | `GPSº [serial]` | `GPSº 2001` |
+| EYE temp sensor | `Sº [serial]` | `Sº 3001` |
+| Vehicle + GPS | `PLATE (GPSº serial)` | `MAT-123 (GPSº 2001)` |
+| Vehicle + EYE | `PLATE (Sº serial)` | `MAT-123 (Sº 3001)` |
+
+**IMEI** appears only in the Vehicles tab as a reference — never in overview, map, PDF, alarms, or charts.
+**mac_address** is never shown to clients at all.
+
+**Locations updated (index.html):** `_prettyLabel`, `_buildMergedDevices`, `renderDeviceTiles`, `renderFleetTable`, `loadSensorAssignTree`, `loadAlarmRules` `_gpsOpts`, speed alarm GPS dropdown, `updateAlarmTypeUI`, PDF trips/alerts/readings tables, offline banner, BLE sensor admin list.
+
+---
+
+## Session 5 Bug Fixes (2026-05-24, commit 1d68b16)
+
+### GPS/EYE label format (reported 4–5 times, now fixed everywhere)
+All `GPS-XXXXX` references changed to `GPSº SERIAL`. All `Sonda`/`EYE Sensor` fallbacks changed to `Sº SERIAL`. This applies to: device tiles, fleet table, vehicle cards, alarm dropdowns, PDF (trips, alerts, readings, filter label), offline banner, BLE sensor admin list.
+
+### EYE sensor still showing "Sonda" in Vehicles tab cards
+`loadSensorAssignTree` only checked `eyeByImei` (admin-assigned via `ble_sensor_assignments`). When a client assigns via Vehicles tab, the link is in `vehicle_assignments.eye_mac`, not `ble_sensor_assignments`. Fix: built `eyeByMac` map and added `vaMap[dev.imei]?.eye_mac → eyeByMac` fallback.
+
+### PDF labels showing raw sensor_id / GPS-XXXXX
+`sensorLabel` (filter header), trip rows, alerts table, readings table all now use `_prettyLabel()` or the `GPSº`/`Sº` format explicitly.
+
+### Portal "View Dashboard →" link not filling client ID
+Admin panel already set `href="/dashboard/?client=CLIENTID"`. Login page now reads `?client=` from `URLSearchParams` on load and auto-fills `#login-cid` + focuses the password field.
+
+### Admin create-client default min/max temp
+Fields were pre-filled `value="2.0"` / `value="8.0"`. Now blank with `placeholder="e.g. 2"`. `createClient()` sends `null` when empty (no fallback), client sets thresholds themselves.
+
+### Admin GPS table: SIM assign button
+Added `📶 SIM` button to each GPS device row. Calls `promptAssignSimToGps(imei, label)` — reuses `#sim-assign-overlay` modal but shows SIM card dropdown (unassigned SIMs only) instead of GPS dropdown. Saves via existing `POST /admin/sims/{id}/assign`.
