@@ -925,7 +925,13 @@
 </div>
 
 <script>
-const API = "http://localhost:8080";
+const API = (()=>{
+  const p = window.location.port;
+  if(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"){
+    return `http://${window.location.hostname}:${p||"8080"}`;
+  }
+  return window.location.origin;
+})();
 
 // Show staging banner if backend reports ENVIRONMENT=staging
 fetch(`${API}/health`).then(r=>r.json()).then(d=>{
