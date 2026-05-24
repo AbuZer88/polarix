@@ -512,6 +512,7 @@
                   <label><input type="checkbox" id="col-vehicle" checked onchange="applyColVisibility()"/> <span data-i18n="fl_vehicle">Vehicle</span></label>
                   <label><input type="checkbox" id="col-driver" checked onchange="applyColVisibility()"/> <span data-i18n="fl_driver">Driver</span></label>
                   <label><input type="checkbox" id="col-alert" checked onchange="applyColVisibility()"/> <span data-i18n="fl_alert">Alert</span></label>
+                  <label><input type="checkbox" id="col-eyeserial" checked onchange="applyColVisibility()"/> <span data-i18n="fl_eyeserial">Sº Sensor</span></label>
                   <label><input type="checkbox" id="col-movement" checked onchange="applyColVisibility()"/> <span data-i18n="fl_movement">Movement</span></label>
                   <label><input type="checkbox" id="col-speed" checked onchange="applyColVisibility()"/> <span data-i18n="fl_speed">Speed</span></label>
                   <label><input type="checkbox" id="col-battery" checked onchange="applyColVisibility()"/> <span data-i18n="fl_battery">Battery</span></label>
@@ -526,6 +527,7 @@
             <table>
               <thead><tr id="fleet-thead">
                 <th id="fl-th-sensor" data-i18n="fl_sensor">Device</th>
+                <th id="fl-th-eyeserial" data-col="eyeserial" data-i18n="fl_eyeserial">Sº Sensor</th>
                 <th id="fl-th-vehicle" data-col="vehicle" data-i18n="fl_vehicle">Vehicle</th>
                 <th id="fl-th-driver" data-col="driver" data-i18n="fl_driver">Driver</th>
                 <th id="fl-th-alert" data-col="alert" data-i18n="fl_alert">Alert</th>
@@ -1157,7 +1159,7 @@ const STRINGS={
     sb_speed:"Speed",sb_movement:"Movement",sb_plate:"Plate",
     sb_last_seen:"Last seen",sb_show_map:"📍 Show on Map",
     // Fleet table headers
-    fl_sensor:"Device",fl_vehicle:"Vehicle",fl_driver:"Driver",fl_alert:"Alert",fl_temp:"Temp",
+    fl_sensor:"Device",fl_eyeserial:"Sº Sensor",fl_vehicle:"Vehicle",fl_driver:"Driver",fl_alert:"Alert",fl_temp:"Temp",
     fl_movement:"Movement",fl_speed:"Speed",fl_battery:"Battery",
     fl_location:"Location",fl_last_seen:"Last Seen",
     fleet_title:"Fleet",fleet_columns:"Columns",fleet_export_csv:"Export CSV",
@@ -1288,7 +1290,7 @@ const STRINGS={
     sb_speed:"Velocidad",sb_movement:"Movimiento",sb_plate:"Matrícula",
     sb_last_seen:"Visto",sb_show_map:"📍 Ver en Mapa",
     // Fleet table headers
-    fl_sensor:"Dispositivo",fl_vehicle:"Vehículo",fl_driver:"Conductor",fl_alert:"Alerta",fl_temp:"Temp",
+    fl_sensor:"Dispositivo",fl_eyeserial:"Sº Sensor",fl_vehicle:"Vehículo",fl_driver:"Conductor",fl_alert:"Alerta",fl_temp:"Temp",
     fl_movement:"Movimiento",fl_speed:"Velocidad",fl_battery:"Batería",
     fl_location:"Ubicación",fl_last_seen:"Último visto",
     fleet_title:"Flota",fleet_columns:"Columnas",fleet_export_csv:"Exportar CSV",
@@ -1370,7 +1372,7 @@ function setLang(l){
   if(el("sb-head-label"))el("sb-head-label").textContent=t("sb_sensors");
   if(el("your-sensors-lbl"))el("your-sensors-lbl").textContent=t("sb_your_sensors");
   const fth={
-    "fl-th-sensor":t("fl_sensor"),"fl-th-vehicle":t("fl_vehicle"),
+    "fl-th-sensor":t("fl_sensor"),"fl-th-eyeserial":t("fl_eyeserial"),"fl-th-vehicle":t("fl_vehicle"),
     "fl-th-alert":t("fl_alert"),"fl-th-temp":t("fl_temp"),
     "fl-th-movement":t("fl_movement"),"fl-th-speed":t("fl_speed"),
     "fl-th-battery":t("fl_battery"),"fl-th-location":t("fl_location"),
@@ -1697,7 +1699,7 @@ function goToMapForSensor(sid, event){
 }
 
 // ── Column picker ─────────────────────────────────────────────────────────────
-const COL_KEYS=["vehicle","driver","alert","movement","speed","battery","location","lastseen"];
+const COL_KEYS=["eyeserial","vehicle","driver","alert","movement","speed","battery","location","lastseen"];
 function toggleColPicker(e){
   e.stopPropagation();
   document.getElementById("col-picker-panel").classList.toggle("open");
@@ -1812,7 +1814,7 @@ function renderDeviceTiles(gpsDevs,eyeSens){
           <span style="font-size:11px;color:var(--mu);">${gpsAgoStr}</span>
         </div>
         ${dev.battery_level!=null?`<div style="font-size:11px;color:var(--mu);">🔋 ${dev.battery_level}%</div>`:""}
-        <div style="font-size:11px;color:var(--mu);margin-top:2px;">${isMoving===true?t("moving"):isMoving===false?t("stopped"):"—"}${fd.speed_kmh!=null?` · ${fd.speed_kmh} km/h`:""}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px;">${isMoving===true?t("moving"):isMoving===false?t("stopped"):"—"}${isMoving===false?" · 0 km/h":(fd.speed_kmh!=null?` · ${fd.speed_kmh} km/h`:"")}</div>
       </div>
       <!-- EYE Sensor info -->
       <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;flex:1;border-left:1px solid var(--bdr);padding-left:12px;">
@@ -1879,7 +1881,8 @@ function renderFleetTable(){
     merged.push({
       _row_key:"gps:"+dev.imei,
       device_label:`GPSº ${serial}`,
-      device_secondary:eye?(eyeSerial?`🌡️ ${eyeSerial}`:eye?"🌡️ —":""):"",
+      device_secondary:"",
+      eye_serial:eyeSerial,
       plate:dev.plate||gFd.plate||"",
       driver_name:gFd.driver_name||(eFd?eFd.driver_name:"")||"",
       shipment_notes:gFd.shipment_notes||(eFd?eFd.shipment_notes:"")||"",
@@ -1901,11 +1904,11 @@ function renderFleetTable(){
       device_secondary:"",
       _stable_id:s.sensor_id});
   }
-  if(!merged.length){tb.innerHTML='<tr><td colspan="10" class="empty">—</td></tr>';return;}
+  if(!merged.length){tb.innerHTML='<tr><td colspan="11" class="empty">—</td></tr>';return;}
   tb.innerHTML=merged.map(s=>{
     const mvClass=s.is_moving?"moving":"stopped";
     const mvTxt=s.is_moving?t("moving"):s.is_moving===false?t("stopped"):"—";
-    const speed=s.speed_kmh!=null?s.speed_kmh+" km/h":"—";
+    const speed=s.is_moving===false?"0 km/h":(s.speed_kmh!=null?s.speed_kmh+" km/h":"—");
     const isBreach=minT!=null&&s.temperature!=null&&(s.temperature<minT||s.temperature>maxT);
     const isLowBat=s.battery_level!=null&&s.battery_level<=20;
     let alertTd;
@@ -1935,6 +1938,7 @@ function renderFleetTable(){
         <div style="font-size:13px;">${s.device_label}${s.shipment_notes?`<span style="font-size:9px;color:var(--mu);margin-left:4px;"${noteTitle}>📦</span>`:""}</div>
         ${s.device_secondary?`<div style="font-size:10px;color:var(--mu);font-weight:400;">${s.device_secondary}</div>`:""}
       </td>
+      <td data-col="eyeserial" style="font-size:12px;font-family:monospace;">${s.eye_serial?`🌡️ Sº ${s.eye_serial}`:`<span style="color:var(--mu);">—</span>`}</td>
       <td data-col="vehicle">${plate}</td>
       ${driverTd}
       ${alertTd.replace("<td","<td data-col=\"alert\"")}
