@@ -1,0 +1,47 @@
+# ── Environment / secrets ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ── Database (live data — never commit) ──────────────────────────────────────
+canary.db
+canary.db-journal
+canary.db-wal
+canary.db-shm
+canary_staging.db
+canary_staging.db-journal
+canary_staging.db-wal
+canary_staging.db-shm
+*.sqlite
+*.sqlite3
+
+# ── Backups directory (created by daily_backup_loop) ─────────────────────────
+backups/
+
+# ── Python ──────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# ── Editor / OS ──────────────────────────────────────────────────────────────
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/

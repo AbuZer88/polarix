@@ -1,0 +1,21 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+
+# ── TCP port note ─────────────────────────────────────────────────────────────
+# Railway exposes HTTP/HTTPS only. The Teltonika TCP server (port 8005, teltonika.py)
+# starts as a background task but CANNOT receive connections from devices on Railway.
+#
+# Solution: Configure your FMB920/FMM920 devices to use HTTP mode instead of
+# Codec 8 TCP. Set the device "Server URL" to:
+#   https://<your-app>.railway.app/teltonika/http
+# and set the HTTP header:
+#   X-Teltonika-Token: <your TELTONIKA_HTTP_TOKEN value>
+#
+# For VPS or local deployments, TCP mode on port 8005 works as-is — no changes needed.
+# See HARDWARE.md for full Teltonika Configurator setup instructions.

@@ -1,0 +1,2356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Polarix Admin</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--bg:#0d1117;--sf:#161b22;--sf2:#1c2128;--bdr:#30363d;--tx:#e6edf3;--mu:#8b949e;
+          --green:#3fb950;--red:#f85149;--yellow:#d29922;--blue:#388bfd;--acc:#58a6ff;}
+    body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+         min-height:100vh;display:flex;flex-direction:column;}
+
+    /* ── HEADER ── */
+    header{display:flex;align-items:center;gap:10px;padding:0 20px;height:52px;background:var(--sf);
+           border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;flex-shrink:0;}
+    .hlogo{font-size:15px;font-weight:800;color:var(--acc);}
+    .hadmin-badge{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;
+                  background:#da363322;color:var(--red);border:1px solid #da363355;}
+    #header-stat{margin-left:auto;font-size:11px;color:var(--mu);}
+
+    /* ── LAYOUT ── */
+    .app-body{display:flex;flex:1;overflow:hidden;height:calc(100vh - 52px);}
+    nav.sidebar{width:200px;background:var(--sf);border-right:1px solid var(--bdr);
+                padding:12px 8px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;overflow-y:auto;}
+    .nav-section{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;
+                 letter-spacing:.6px;padding:8px 8px 4px;}
+    .nav-btn{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;
+             font-size:13px;cursor:pointer;color:var(--tx);background:none;border:none;
+             width:100%;text-align:left;transition:.12s;}
+    .nav-btn:hover{background:var(--sf2);}
+    .nav-btn.active{background:#1f6feb22;color:var(--acc);font-weight:600;}
+    .nav-btn .icon{width:18px;text-align:center;font-size:14px;}
+    .nav-badge{margin-left:auto;padding:1px 6px;border-radius:7px;font-size:10px;font-weight:700;
+               background:var(--red);color:#fff;}
+
+    main{flex:1;overflow-y:auto;padding:20px;}
+
+    /* ── CARDS ── */
+    .card{background:var(--sf);border:1px solid var(--bdr);border-radius:8px;padding:18px;margin-bottom:16px;}
+    .card h2{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;
+             letter-spacing:.6px;margin-bottom:14px;}
+    .page{display:none;}
+    .page.active{display:block;}
+
+    /* ── STAT CARDS ── */
+    .stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:16px;}
+    .stat-card{background:var(--sf);border:1px solid var(--bdr);border-radius:8px;
+               padding:14px 12px;text-align:center;}
+    .stat-card .sn{font-size:28px;font-weight:800;line-height:1;}
+    .stat-card .sl{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
+    .stat-card.s-green .sn{color:var(--green);}
+    .stat-card.s-red .sn{color:var(--red);}
+    .stat-card.s-yellow .sn{color:var(--yellow);}
+    .stat-card.s-blue .sn{color:var(--acc);}
+    .stat-card.s-mu .sn{color:var(--mu);}
+
+    /* ── TABLES ── */
+    table{width:100%;border-collapse:collapse;font-size:12px;}
+    th{text-align:left;color:var(--mu);font-weight:500;padding:7px 8px;
+       border-bottom:1px solid var(--bdr);white-space:nowrap;}
+    td{padding:8px 8px;border-bottom:1px solid #21262d;vertical-align:middle;}
+    tbody tr:last-child td{border-bottom:none;}
+    tbody tr:hover td{background:#1c2128;cursor:pointer;}
+    .empty{color:var(--mu);font-size:12px;text-align:center;padding:16px;}
+
+    /* ── FORMS ── */
+    label{display:block;font-size:12px;color:var(--mu);margin-bottom:3px;margin-top:10px;}
+    label:first-child{margin-top:0;}
+    input,select,textarea{width:100%;padding:7px 9px;background:var(--bg);border:1px solid var(--bdr);
+                          border-radius:6px;color:var(--tx);font-size:13px;outline:none;}
+    input:focus,select:focus,textarea:focus{border-color:var(--acc);}
+    button{margin-top:10px;padding:8px 14px;background:var(--acc);color:#0d1117;border:none;
+           border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:.12s;}
+    button:hover{opacity:.85;}
+    button.sec{background:var(--sf2);color:var(--tx);border:1px solid var(--bdr);}
+    button.danger{background:var(--red);color:#fff;}
+    button.green{background:var(--green);color:#0d1117;}
+    button.sm{padding:4px 10px;font-size:12px;margin:0;}
+    button.ico{width:26px;height:26px;padding:0;margin:0;background:transparent;border:1px solid var(--bdr);
+               border-radius:5px;color:var(--mu);font-size:12px;display:inline-flex;align-items:center;justify-content:center;}
+    button.ico:hover{border-color:var(--red);color:var(--red);}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+    .row{display:grid;gap:14px;}
+    .c2{grid-template-columns:1fr 1fr;}
+
+    /* ── BADGES ── */
+    .badge{padding:2px 8px;border-radius:9px;font-size:10px;font-weight:700;}
+    .badge-green{background:#2ea04322;color:var(--green);border:1px solid #2ea04355;}
+    .badge-red{background:#da363322;color:var(--red);border:1px solid #da363355;}
+    .badge-blue{background:#1f6feb22;color:var(--acc);border:1px solid #1f6feb44;}
+    .badge-yellow{background:#d2992222;color:var(--yellow);border:1px solid #d2992255;}
+    .badge-mu{background:#30363d44;color:var(--mu);border:1px solid var(--bdr);}
+
+    /* ── CLIENT PROFILE SLIDE ── */
+    .profile-overlay{position:fixed;inset:0;z-index:200;display:flex;justify-content:flex-end;}
+    .profile-backdrop{position:absolute;inset:0;background:#0009;}
+    .profile-panel{position:relative;width:min(560px,95vw);background:var(--sf);
+                   border-left:1px solid var(--bdr);overflow-y:auto;padding:0;}
+    .profile-header{padding:18px 20px;border-bottom:1px solid var(--bdr);display:flex;
+                    align-items:center;gap:12px;background:var(--sf2);}
+    .profile-header h2{font-size:16px;font-weight:700;flex:1;}
+    .profile-body{padding:20px;}
+    .profile-section{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--bdr);}
+    .profile-section:last-child{border-bottom:none;}
+    .profile-section h3{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;
+                        letter-spacing:.5px;margin-bottom:10px;}
+    .profile-kv{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:12px;}
+    .profile-kv .k{color:var(--mu);}
+    .profile-kv .v{font-weight:600;}
+    .sensor-chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);
+                 border:1px solid var(--bdr);border-radius:6px;padding:5px 9px;
+                 font-size:11px;margin:3px;}
+    .sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .sdot.online{background:var(--green);}
+    .sdot.offline{background:var(--red);}
+    .sdot.unknown{background:var(--mu);}
+
+    /* ── FLEET GRID ── */
+    .fleet-grid{display:flex;flex-wrap:wrap;gap:8px;}
+    .sg-chip{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--bdr);
+             border-radius:6px;padding:6px 10px;font-size:12px;min-width:130px;cursor:pointer;}
+    .sg-chip:hover{border-color:var(--acc);}
+    .sg-chip .sname{font-weight:600;}
+    .sg-chip .sclient{color:var(--mu);font-size:10px;}
+    .sg-chip .sbat{color:var(--mu);font-size:10px;margin-left:auto;}
+
+    /* ── SIMULATOR ── */
+    .sim-display{background:var(--bg);border:1px solid var(--bdr);border-radius:8px;
+                 padding:12px;margin-top:12px;display:grid;
+                 grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;}
+    .sim-stat{text-align:center;}
+    .sim-stat .sv{font-size:18px;font-weight:800;color:var(--acc);}
+    .sim-stat .sl{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;}
+    .sim-btns{display:flex;gap:8px;margin-top:10px;}
+    .sim-btns button{flex:1;margin:0;}
+
+    /* ── NOTIFIER CHIPS ── */
+    .ns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+    .ns-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:9px;}
+    .ns-chip.on{background:#2ea04322;color:var(--green);border:1px solid #2ea04366;}
+    .ns-chip.off{background:#30363d44;color:var(--mu);border:1px solid var(--bdr);}
+
+    /* ── OFFLINE MONITOR ── */
+    .offline-banner{background:#da363318;border:1px solid #da363355;border-radius:8px;
+                    padding:12px 16px;margin-bottom:16px;}
+    .offline-banner.ok{background:#2ea04318;border-color:#2ea04355;}
+    .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);
+           animation:pulse 1.4s ease infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(1.35);}}
+
+    /* ── LOGIN ── */
+    #admin-login{position:fixed;inset:0;background:var(--bg);display:flex;
+                 align-items:center;justify-content:center;z-index:500;}
+    .abox{background:var(--sf);border:1px solid var(--bdr);border-radius:12px;
+          padding:40px 36px;width:320px;text-align:center;}
+    .abox .icon{font-size:30px;margin-bottom:8px;}
+    .abox h1{font-size:18px;font-weight:800;color:var(--acc);margin-bottom:4px;}
+    .abox p{font-size:12px;color:var(--mu);margin-bottom:24px;}
+    .abox input{margin-bottom:10px;}
+    #admin-err{font-size:12px;color:var(--red);margin-top:6px;min-height:14px;}
+
+    /* ── SEARCH ── */
+    .search-bar{position:relative;margin-bottom:14px;}
+    .search-bar input{padding-left:30px;background:var(--sf2);}
+    .search-bar .si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--mu);font-size:13px;}
+
+    /* ── PAGINATION ── */
+    .pager{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--mu);}
+    .pager button{margin:0;}
+
+    @media(max-width:640px){
+      nav.sidebar{display:none;}
+      .app-body{flex-direction:column;}
+      .c2,.g2,.g3{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Staging banner — shown only when ENVIRONMENT=staging -->
+<div id="staging-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#d29922;color:#0d1117;text-align:center;font-size:12px;font-weight:700;padding:4px 0;letter-spacing:.4px;">
+  ⚠ STAGING ENVIRONMENT — admin panel connected to test database
+</div>
+
+<!-- Admin Login -->
+<div id="admin-login">
+  <div class="abox">
+    <div class="icon">❄️</div>
+    <h1>Polarix Admin CRM</h1>
+    <p>Polarix — System Administration</p>
+    <label>Admin Key</label>
+    <input id="ak" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()"/>
+    <button onclick="adminLogin()">Enter Admin Panel</button>
+    <div id="admin-err"></div>
+    <div style="margin-top:12px;font-size:11px;color:var(--mu);">Key set via <code>ADMIN_KEY</code> env var.</div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <span class="hlogo">❄️ Polarix</span>
+  <span class="hadmin-badge">ADMIN CRM</span>
+  <div id="offline-indicator" style="display:none;margin-left:12px;">
+    <span class="pulse"></span>
+    <span id="offline-cnt-hdr" style="font-size:11px;color:var(--red);margin-left:6px;"></span>
+  </div>
+  <div id="header-stat"></div>
+  <a href="/dashboard/" style="font-size:12px;color:var(--acc);text-decoration:none;margin-left:12px;">← Client Dashboard</a>
+</header>
+
+<div class="app-body" id="app-body" style="display:none;">
+  <!-- Sidebar nav -->
+  <nav class="sidebar">
+    <div class="nav-section">Overview</div>
+    <button class="nav-btn active" onclick="showPage('dashboard')"><span class="icon">📊</span> Dashboard</button>
+    <div class="nav-section">Management</div>
+    <button class="nav-btn" onclick="showPage('clients')"><span class="icon">👥</span> Clients <span id="nav-client-cnt" class="nav-badge" style="display:none;"></span></button>
+    <button class="nav-btn" onclick="showPage('sensors')"><span class="icon">🌡️</span> EYE Sensors</button>
+    <button class="nav-btn" onclick="showPage('devices')"><span class="icon">📟</span> GPS Devices</button>
+    <button class="nav-btn" onclick="showPage('vehicles')"><span class="icon">🚗</span> Vehicles</button>
+    <button class="nav-btn" onclick="showPage('sims')"><span class="icon">📶</span> SIM Cards</button>
+    <button class="nav-btn" onclick="showPage('reassign')"><span class="icon">🔀</span> Reassign</button>
+    <button class="nav-btn" onclick="showPage('almacen')"><span class="icon">🏭</span> Almacén</button>
+    <div class="nav-section">Tools</div>
+    <button class="nav-btn" onclick="showPage('simulator')"><span class="icon">🎮</span> Simulator</button>
+    <button class="nav-btn" onclick="showPage('settings-admin')"><span class="icon">⚙️</span> Settings</button>
+  </nav>
+
+  <main>
+
+    <!-- ── DASHBOARD page ── -->
+    <div class="page active" id="page-dashboard">
+      <!-- Offline banner -->
+      <div id="offline-banner" class="offline-banner">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span id="offline-dot" class="pulse"></span>
+          <span id="offline-heading" style="font-size:13px;font-weight:700;">Checking sensors…</span>
+          <button class="sm sec" style="margin-left:auto;" onclick="loadOfflineMonitor()">↻ Refresh</button>
+        </div>
+        <div id="offline-table-wrap" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stat-row">
+        <div class="stat-card s-blue"><div class="sn" id="ds-clients">—</div><div class="sl">Clients</div></div>
+        <div class="stat-card s-green"><div class="sn" id="ds-sensors">—</div><div class="sl">Sensors</div></div>
+        <div class="stat-card s-green"><div class="sn" id="ds-online">—</div><div class="sl">Online</div></div>
+        <div class="stat-card s-yellow"><div class="sn" id="ds-warn">—</div><div class="sl">Warning</div></div>
+        <div class="stat-card s-red"><div class="sn" id="ds-offline">—</div><div class="sl">Offline</div></div>
+        <div class="stat-card s-blue"><div class="sn" id="ds-moving">—</div><div class="sl">Moving</div></div>
+        <div class="stat-card s-mu"><div class="sn" id="ds-unassigned">—</div><div class="sl">Unassigned</div></div>
+      </div>
+
+      <!-- Sensor fleet grid -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <h2 style="margin-bottom:0;">📡 All Sensors</h2>
+          <button class="sm sec" onclick="loadDashboard()">↻ Refresh</button>
+        </div>
+        <div class="fleet-grid" id="fleet-grid"><div class="empty">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ── CLIENTS page ── -->
+    <div class="page" id="page-clients">
+      <div class="row c2">
+        <!-- Create client -->
+        <div class="card">
+          <h2>👤 Create Client</h2>
+          <label>Client ID</label><input id="nc-id" type="text" placeholder="e.g. almeria_fleet"/>
+          <label>Password</label><input id="nc-pw" type="password" placeholder="Min 4 chars"/>
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <div style="flex:1;"><label>Temp. mínima (°C)</label><input id="nc-min" type="number" step="0.1" value="2.0" style="width:100%;"/></div>
+            <div style="flex:1;"><label>Temp. máxima (°C)</label><input id="nc-max" type="number" step="0.1" value="8.0" style="width:100%;"/></div>
+          </div>
+          <button class="green" onclick="createClient()" style="margin-top:12px;">Create Client</button>
+          <div id="nc-st" style="font-size:12px;margin-top:6px;min-height:14px;"></div>
+        </div>
+
+        <!-- Notifier status -->
+        <div class="card">
+          <h2>🔔 Notification Channels</h2>
+          <div id="notif-status" class="ns"><div style="color:var(--mu);font-size:12px;">Loading…</div></div>
+          <p style="font-size:11px;color:var(--mu);margin-top:10px;">Configure in <code>backend/.env</code>. Restart after changes.</p>
+        </div>
+      </div>
+
+      <!-- Client list -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">👥 Client Accounts</h2>
+          <button class="sm sec" onclick="loadClients()">↻ Refresh</button>
+        </div>
+        <div class="search-bar">
+          <span class="si">🔍</span>
+          <input id="client-search" type="text" placeholder="Search clients…" oninput="filterClients()"/>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>Client ID</th><th>Sensors</th><th>Alarms</th><th>Password</th><th>Created</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="clients-tbody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+          </table>
+          <div class="pager" id="clients-pager"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EYE SENSORS page (Teltonika EYE Sensor / BLE) ── -->
+    <div class="page" id="page-sensors">
+      <!-- Register EYE Sensor -->
+      <div class="card">
+        <h2>🌡️ Register EYE Sensor (Teltonika BLE)</h2>
+        <p style="font-size:11px;color:var(--mu);margin-bottom:14px;">Teltonika EYE Sensors are EN 12830 certified BLE temperature sensors. They pair with an FMB920 GPS device which relays their readings over GSM.</p>
+        <div class="g2">
+          <div>
+            <label>MAC Address <span style="color:var(--mu);font-size:10px;">(required — printed on sensor)</span></label>
+            <input id="ble-mac" type="text" placeholder="e.g. AA:BB:CC:DD:EE:FF" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
+            <label>Serial Number <span style="color:var(--red);font-size:10px;">* required — this is what the client will see in their dashboard</span></label>
+            <input id="ble-sn" type="text" placeholder="e.g. EYE00001" required/>
+            <label>Label / Description</label>
+            <input id="ble-label" type="text" placeholder="e.g. Pallet sensor 3"/>
+          </div>
+          <div>
+            <label>Assign to Client</label>
+            <select id="ble-cid"><option value="">— select client —</option></select>
+          </div>
+        </div>
+        <button onclick="registerBle()" style="margin-top:12px;background:var(--green);color:#0d1117;">🌡️ Register EYE Sensor</button>
+        <div id="ble-reg-st" style="font-size:12px;margin-top:8px;min-height:14px;"></div>
+      </div>
+
+      <!-- EYE Sensor inventory -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">🌡️ Registered EYE Sensors</h2>
+          <button class="sm sec" onclick="loadBleSensors()">↻ Refresh</button>
+        </div>
+        <div class="search-bar" style="margin-bottom:10px;">
+          <span class="si">🔍</span>
+          <input id="ble-search" type="text" placeholder="Search by MAC, label, client…" oninput="filterBleSensors()"/>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>ID</th><th>MAC Address</th><th>Serial No</th><th>Label</th><th>Client</th><th>Paired GPS Device</th><th>Battery</th><th>Last Seen</th><th>Actions</th></tr></thead>
+            <tbody id="ble-tbody"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Hidden compat elements for old sensor functions -->
+      <div id="sensors-tbody" style="display:none;"></div>
+      <div id="assign-row" style="display:none;">
+        <input id="ar-sid" type="hidden"/>
+        <select id="ar-cid" style="display:none;"></select>
+        <div id="ar-st"></div>
+      </div>
+    </div>
+
+    <!-- ── GPS DEVICES page ── -->
+    <div class="page" id="page-devices">
+      <!-- GPS Device registration card -->
+      <div class="card">
+        <h2>➕ Register FMB920 GPS Device</h2>
+        <p style="font-size:11px;color:var(--mu);margin-bottom:14px;">Register a Teltonika FMB920 GPS tracker. Each FMB920 acts as a BLE gateway for EYE Sensors and transmits data over GSM. Register EYE Sensors separately in the EYE Sensors page.</p>
+        <div id="reg-gps-fields">
+          <div class="g2">
+            <div>
+              <label>IMEI <span style="color:var(--mu);font-size:10px;">(required — 15 digits on device label)</span></label>
+              <input id="td-imei" type="text" placeholder="e.g. 352656100001234"/>
+              <label>Serial Number <span style="color:var(--red);font-size:10px;">* required — this is what the client will see in their dashboard</span></label>
+              <input id="td-sn" type="text" placeholder="e.g. FMB9209000001" required/>
+              <label>Sensor ID <span style="color:var(--mu);font-size:10px;">(auto-generated if blank)</span></label>
+              <input id="td-sid" type="text" placeholder="e.g. truck1-gps  (optional)"/>
+              <label>RMS Device ID <span style="color:var(--mu);font-size:10px;">(from Teltonika RMS portal, optional)</span></label>
+              <input id="td-rms" type="text" placeholder="e.g. 12345"/>
+            </div>
+            <div>
+              <label>Client</label>
+              <select id="td-cid"><option value="">— select client —</option></select>
+              <label>Notes</label>
+              <input id="td-notes" type="text" placeholder="e.g. FMB920 on Truck 3"/>
+            </div>
+          </div>
+          <button onclick="registerDevice()" style="margin-top:12px;background:var(--acc);color:#0d1117;">📟 Register FMB920 GPS Device</button>
+        </div>
+        <div id="td-st" style="font-size:12px;margin-top:8px;min-height:14px;"></div>
+        <!-- Hidden compat fields for old register functions -->
+        <div style="display:none;">
+          <input id="reg-type-gps"/><input id="reg-type-esp"/><input id="reg-type-ble"/>
+          <div id="reg-esp-fields"></div><div id="reg-ble-fields"></div>
+          <input id="esp-hwid"/><input id="esp-sid"/><select id="esp-cid"></select><input id="esp-notes"/>
+          <input id="ns-hw"/><input id="ns-sid"/><select id="ns-cid"></select><input id="ns-notes"/>
+          <div id="ns-st"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">📟 Registered GPS Devices</h2>
+          <button class="sm sec" onclick="loadDevices()">↻ Refresh</button>
+        </div>
+        <div class="search-bar" style="margin-bottom:10px;">
+          <span class="si">🔍</span>
+          <input id="device-search" type="text" placeholder="Search by IMEI, sensor ID, client, plate…" oninput="filterDevices()"/>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>IMEI</th><th>Serial No</th><th>Sensor ID</th><th>Client</th><th>RMS ID</th><th>Notes</th><th>Current Vehicle</th><th>Registered</th><th>Actions</th></tr></thead>
+            <tbody id="devices-tbody"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🚗 Assign GPS Device to Vehicle</h2>
+        <p style="font-size:11px;color:var(--mu);margin-bottom:12px;">Assigning a GPS device to a vehicle plate automatically mirrors the assignment to the client dashboard. The previous assignment for that device is closed with a timestamp.</p>
+        <div class="g2">
+          <div>
+            <label>GPS Device (IMEI)</label>
+            <select id="gva-imei"><option value="">— select device —</option></select>
+            <label>Vehicle Plate</label>
+            <input id="gva-plate" type="text" placeholder="e.g. AB-1234" oninput="this.value=this.value.toUpperCase()"/>
+          </div>
+          <div style="display:flex;flex-direction:column;justify-content:flex-end;">
+            <button onclick="assignGpsToVehicle()" style="background:var(--green);color:#0d1117;">🚗 Assign to Vehicle</button>
+            <div id="gva-st" style="font-size:12px;margin-top:6px;min-height:14px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">🚗 Active GPS Vehicle Assignments</h2>
+          <button class="sm sec" onclick="loadGpsVehicleAssignments()">↻ Refresh</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>IMEI</th><th>Sensor ID</th><th>Client</th><th>Vehicle Plate</th><th>Assigned</th><th>Actions</th></tr></thead>
+            <tbody id="gva-tbody"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BLE/EYE SENSORS page (legacy, now folded into page-sensors) ── -->
+    <div class="page" id="page-ble">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">🌡️ EYE Sensors (Teltonika BLE)</h2>
+          <button class="sm sec" onclick="loadBleSensors()">↻ Refresh</button>
+        </div>
+        <p style="font-size:11px;color:var(--mu);margin-bottom:10px;">Teltonika EYE Sensors are identified by their MAC address. They communicate via the FMB920 GPS device they are paired with. Use the <b>Reassign</b> page to move a sensor between GPS devices.</p>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>ID</th><th>MAC Address</th><th>Serial No</th><th>Label</th><th>Client</th><th>Current GPS Device</th><th>Battery</th><th>Last Seen</th><th>Actions</th></tr></thead>
+            <tbody id="ble-tbody"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📋 EYE Sensor Assignment History</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>MAC</th><th>Label</th><th>Client</th><th>GPS Device</th><th>Assigned</th><th>Unassigned</th></tr></thead>
+            <tbody id="ble-hist-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VEHICLES page ── -->
+    <div class="page" id="page-vehicles">
+      <div class="card">
+        <h2>🚗 Register Vehicle</h2>
+        <div class="g2">
+          <div>
+            <label>Plate <span style="color:var(--mu);font-size:10px;">(required)</span></label>
+            <input id="veh-plate" type="text" placeholder="e.g. AB-1234" oninput="this.value=this.value.toUpperCase()"/>
+            <label>Label</label>
+            <input id="veh-label" type="text" placeholder="e.g. Refrigerated Van 1"/>
+          </div>
+          <div>
+            <label>Client</label>
+            <select id="veh-cid"><option value="">— select client —</option></select>
+          </div>
+        </div>
+        <button onclick="registerVehicle()" style="margin-top:12px;background:var(--green);color:#0d1117;">🚗 Register Vehicle</button>
+        <div id="veh-st" style="font-size:12px;margin-top:6px;min-height:14px;"></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">🚗 Vehicle Fleet</h2>
+          <div style="display:flex;gap:6px;">
+            <select id="veh-filter-client" style="font-size:12px;padding:4px 8px;" onchange="loadVehicles()">
+              <option value="">All clients</option>
+            </select>
+            <button class="sm sec" onclick="loadVehicles()">↻ Refresh</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Plate</th><th>Label</th><th>Client</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody id="veh-tbody"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REASSIGN page ── -->
+    <div class="page" id="page-reassign">
+      <div class="card">
+        <h2>🔀 Reassign EYE Sensor to GPS Device</h2>
+        <p style="font-size:12px;color:var(--mu);margin-bottom:14px;">
+          Select an EYE Sensor and a target FMB920 GPS device. The current pairing will be closed and a new one opened.
+          If <code>TELTONIKA_RMS_TOKEN</code> is configured, the BLE whitelist on both devices will be pushed via Teltonika RMS API automatically.
+        </p>
+        <div class="g2">
+          <div>
+            <label>EYE Sensor</label>
+            <select id="ras-sensor"><option value="">— select EYE sensor —</option></select>
+            <div id="ras-sensor-info" style="font-size:11px;color:var(--mu);margin-top:4px;min-height:16px;"></div>
+          </div>
+          <div>
+            <label>Target GPS Device (IMEI)</label>
+            <select id="ras-device"><option value="">— select GPS device —</option></select>
+            <div id="ras-device-info" style="font-size:11px;color:var(--mu);margin-top:4px;min-height:16px;"></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px;background:var(--sf2);border:1px solid var(--bdr);border-radius:6px;display:none;" id="ras-confirm-box">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px;">⚠ Confirm Reassignment</div>
+          <div id="ras-confirm-text" style="font-size:12px;color:var(--mu);margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="doReassign()" style="background:var(--red);color:#fff;margin:0;">🔀 Confirm Reassign</button>
+            <button class="sec" onclick="cancelReassign()" style="margin:0;">Cancel</button>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <button onclick="prepareReassign()" style="background:var(--acc);color:#0d1117;" id="ras-btn">Preview Reassignment</button>
+        </div>
+        <div id="ras-st" style="font-size:12px;margin-top:8px;min-height:14px;"></div>
+      </div>
+      <div class="card">
+        <h2>📋 Recent Reassignments</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>MAC</th><th>Label</th><th>From Device</th><th>To Device</th><th>Client</th><th>When</th></tr></thead>
+            <tbody id="ras-hist-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ALMACÉN page ── -->
+    <div class="page" id="page-almacen">
+      <!-- Summary bar -->
+      <div class="stat-row" style="margin-bottom:14px;">
+        <div class="stat-card s-blue"><div class="sn" id="alm-gps-total">—</div><div class="sl">GPS Devices</div></div>
+        <div class="stat-card s-green"><div class="sn" id="alm-gps-assigned">—</div><div class="sl">Assigned (Client)</div></div>
+        <div class="stat-card s-yellow"><div class="sn" id="alm-gps-vehicle">—</div><div class="sl">In Vehicle</div></div>
+        <div class="stat-card s-mu"><div class="sn" id="alm-gps-free">—</div><div class="sl">Unassigned</div></div>
+        <div class="stat-card s-blue"><div class="sn" id="alm-sensor-total">—</div><div class="sl">EYE Sensors</div></div>
+        <div class="stat-card s-green"><div class="sn" id="alm-sensor-assigned">—</div><div class="sl">EYE Sensors Assigned</div></div>
+      </div>
+
+      <!-- GPS Devices inventory -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">📟 GPS Device Inventory</h2>
+          <div style="display:flex;gap:6px;">
+            <select id="alm-filter-client" style="font-size:12px;padding:4px 8px;" onchange="renderAlmacen()">
+              <option value="">All clients</option>
+            </select>
+            <button class="sm sec" onclick="loadAlmacen()">↻ Refresh</button>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--mu);margin-bottom:10px;">Each GPS device can be assigned to a <b>client</b> (ownership) and optionally to a <b>vehicle plate</b> (current deployment). Use this view to see everything at a glance and quick-assign.</p>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>IMEI</th><th>Sensor ID</th><th>Client (Owner)</th><th>Vehicle Plate</th><th>Last Seen</th><th>Battery</th><th>Notes</th><th>Actions</th></tr></thead>
+            <tbody id="alm-gps-tbody"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+        <!-- Quick assign form -->
+        <div id="alm-quick-assign" style="display:none;background:var(--sf2);border:1px solid var(--bdr);border-radius:8px;padding:12px;margin-top:10px;">
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px;">Quick Assign: <span id="alm-qa-imei-label"></span></div>
+          <input type="hidden" id="alm-qa-imei"/>
+          <div class="g3">
+            <div>
+              <label>Client (owner)</label>
+              <select id="alm-qa-client"></select>
+            </div>
+            <div>
+              <label>Vehicle Plate (optional)</label>
+              <input id="alm-qa-plate" type="text" placeholder="AB-1234" oninput="this.value=this.value.toUpperCase()"/>
+            </div>
+            <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;">
+              <button onclick="doAlmacenAssign()" style="background:var(--green);color:#0d1117;margin:0;">✓ Apply</button>
+              <button class="sec" onclick="closeAlmacenForm()" style="margin:0;">Cancel</button>
+            </div>
+          </div>
+          <div id="alm-qa-st" style="font-size:11px;margin-top:6px;min-height:14px;"></div>
+        </div>
+      </div>
+
+      <!-- Sensor Inventory -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <h2 style="margin-bottom:0;">🌡️ EYE Sensor Inventory</h2>
+          <button class="sm sec" onclick="loadAlmacen()">↻ Refresh</button>
+        </div>
+        <p style="font-size:11px;color:var(--mu);margin-bottom:10px;">Teltonika EYE Sensors (BLE) registered in the system. Each should be paired to a client and an FMB920 GPS device.</p>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>MAC Address</th><th>Label</th><th>Client (Owner)</th><th>Paired FMB920</th><th>Last Seen</th><th>Battery</th><th>Actions</th></tr></thead>
+            <tbody id="alm-sensor-tbody"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SIM CARDS page ── -->
+    <div class="page" id="page-sims">
+      <div class="card">
+        <h2>📶 SIM Card Inventory</h2>
+        <p class="hint" style="margin-bottom:14px;">Track every SIM card you insert into an FMB920. ICCID is printed on the SIM (20 digits). Phone number is the assigned MSISDN. Assignment history is kept forever.</p>
+
+        <!-- Register form -->
+        <div style="background:var(--bg);border:1px solid var(--bdr);border-radius:8px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">+ Register New SIM</div>
+          <div class="row c2">
+            <div>
+              <label>ICCID <span style="color:var(--red);font-size:10px;">* required (19-20 digits)</span></label>
+              <input id="sim-iccid" type="text" placeholder="e.g. 8934075100012345678"/>
+              <label>Phone Number (MSISDN)</label>
+              <input id="sim-phone" type="text" placeholder="e.g. +34612345678"/>
+              <label>Carrier</label>
+              <input id="sim-carrier" type="text" placeholder="e.g. Movistar / Orange / Vodafone / Truphone"/>
+              <label>Plan / Tariff</label>
+              <input id="sim-plan" type="text" placeholder="e.g. M2M 100MB/month"/>
+            </div>
+            <div>
+              <label>Monthly Cost (EUR)</label>
+              <input id="sim-cost" type="number" step="0.01" min="0" value="0"/>
+              <label>Activated</label>
+              <input id="sim-act" type="date"/>
+              <label>Expires</label>
+              <input id="sim-exp" type="date"/>
+              <label>Notes</label>
+              <input id="sim-notes" type="text" placeholder="(optional)"/>
+            </div>
+          </div>
+          <button onclick="registerSim()" style="background:var(--green);color:#0d1117;padding:8px 18px;margin-top:10px;font-weight:700;">+ Register SIM</button>
+          <span id="sim-reg-st" style="font-size:12px;margin-left:10px;"></span>
+        </div>
+
+        <!-- Filter -->
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:160px;">
+            <label style="font-size:11px;color:var(--mu);">Filter by Client</label>
+            <select id="sim-filter-client" onchange="loadSims()"><option value="">All clients</option></select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--mu);">Status</label>
+            <select id="sim-filter-status" onchange="loadSims()">
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+          <button class="sm sec" onclick="loadSims()">↻ Reload</button>
+        </div>
+
+        <!-- Table -->
+        <div class="tbl-wrap" style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th>ICCID</th><th>Phone</th><th>Carrier</th><th>Plan</th>
+              <th>Status</th><th>Cost/mo</th><th>Expires</th>
+              <th>Assigned to</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="sim-tbody"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SIMULATOR page ── -->
+    <div class="page" id="page-simulator">
+      <div class="card">
+        <h2>🎮 Device Simulator</h2>
+        <p class="hint" style="margin-bottom:14px;">Simulate a real client journey: pick a client, choose between simulating a <b>GPS device</b>, an <b>EYE temperature sensor</b>, or both at once. Their registered devices and vehicles appear below.</p>
+
+        <div class="row c2">
+          <div>
+            <label>Client</label>
+            <select id="vs-client" onchange="onSimClientChange()"><option value="">— select client —</option></select>
+
+            <label>Simulation Mode</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+              <button class="sm" id="sm-both" onclick="setSimMode('both')">📟+🌡️ Both</button>
+              <button class="sm sec" id="sm-gps" onclick="setSimMode('gps')">📟 GPS only</button>
+              <button class="sm sec" id="sm-temp" onclick="setSimMode('temp')">🌡️ Temperature only</button>
+            </div>
+
+            <label>GPS Device (FMB920)</label>
+            <select id="vs-gps"><option value="">— pick / register first —</option></select>
+
+            <label>EYE Sensor (Temperature)</label>
+            <select id="vs-eye"><option value="">— pick / register first —</option></select>
+
+            <label>Manual Sensor ID (legacy / override) <span style="color:var(--mu);font-size:10px;">— leave blank to use selections above</span></label>
+            <input id="vs-sid" type="text" placeholder="Optional override"/>
+
+            <label>Temperature: <span id="vs-tv">5.0</span> °C</label>
+            <input id="vs-sldr" type="range" min="-20" max="40" step="0.5" value="5"
+              oninput="document.getElementById('vs-tv').textContent=parseFloat(this.value).toFixed(1)"/>
+            <label>Battery: <span id="vs-bv">80</span>%</label>
+            <input id="vs-bat" type="range" min="0" max="100" step="1" value="80"
+              oninput="document.getElementById('vs-bv').textContent=this.value"/>
+          </div>
+          <div>
+            <label>Preset Location</label>
+            <select id="vs-preset" onchange="applyPreset()">
+              <option value="">Custom</option>
+              <option value="36.8340,-2.4637">Almería, Spain</option>
+              <option value="36.7213,-4.4214">Málaga, Spain</option>
+              <option value="37.3891,-5.9845">Sevilla, Spain</option>
+              <option value="40.4168,-3.7038">Madrid, Spain</option>
+              <option value="31.6295,-7.9811">Marrakech, Morocco</option>
+              <option value="36.7372,3.0863">Algiers, Algeria</option>
+              <option value="25.2048,55.2708">Dubai, UAE</option>
+            </select>
+            <div class="g2" style="margin-top:6px;">
+              <div><label>Lat</label><input id="vs-lat" type="number" step="0.0001" value="36.8340"/></div>
+              <div><label>Lng</label><input id="vs-lng" type="number" step="0.0001" value="-2.4637"/></div>
+            </div>
+            <label>Interval (seconds)</label>
+            <input id="vs-interval" type="number" min="2" max="60" value="3"/>
+
+            <!-- Client devices & vehicles preview -->
+            <div style="margin-top:14px;padding:10px;background:var(--bg);border:1px solid var(--bdr);border-radius:8px;">
+              <div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Client Inventory</div>
+              <div id="vs-inventory" style="font-size:12px;color:var(--mu);">Select a client to see registered devices &amp; vehicles…</div>
+            </div>
+          </div>
+        </div>
+        <div class="sim-display">
+          <div class="sim-stat"><div class="sv" id="ss-speed">0</div><div class="sl">km/h</div></div>
+          <div class="sim-stat"><div class="sv" id="ss-heading">N</div><div class="sl">Heading</div></div>
+          <div class="sim-stat"><div class="sv" id="ss-lat">—</div><div class="sl">Latitude</div></div>
+          <div class="sim-stat"><div class="sv" id="ss-lng">—</div><div class="sl">Longitude</div></div>
+          <div class="sim-stat"><div class="sv" id="ss-count">0</div><div class="sl">Sent</div></div>
+        </div>
+        <div class="sim-btns">
+          <button class="green" id="vs-move-btn" onclick="toggleMovement()">▶ Start Movement</button>
+          <button class="sec" id="vs-single-btn" onclick="sendSingleReading()">Send One Reading</button>
+          <button class="sec" id="vs-stop-btn" onclick="stopAll()" style="display:none;">⏹ Stop All</button>
+        </div>
+        <div id="sim-log" style="font-size:11px;color:var(--mu);margin-top:8px;min-height:16px;"></div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS page ── -->
+    <div class="page" id="page-settings-admin">
+      <div class="card">
+        <h2>🔔 Notification Channels</h2>
+        <div id="notif-status-settings" class="ns"><div style="color:var(--mu);font-size:12px;">Loading…</div></div>
+        <p style="font-size:11px;color:var(--mu);margin-top:10px;">Configure Twilio + SMTP credentials in the <code>backend/.env</code> or server environment. Restart server after changes.</p>
+      </div>
+      <div class="card">
+        <h2>ℹ️ Server Info</h2>
+        <div id="server-info" class="profile-kv"><span style="color:var(--mu);font-size:12px;">Loading…</span></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Client profile slide-in panel -->
+<div id="client-profile" class="profile-overlay" style="display:none;">
+  <div class="profile-backdrop" onclick="closeProfile()"></div>
+  <div class="profile-panel">
+    <div class="profile-header">
+      <div>
+        <h2 id="profile-title">Client</h2>
+        <div id="profile-sub" style="font-size:11px;color:var(--mu);margin-top:2px;"></div>
+      </div>
+      <div style="display:flex;gap:6px;margin-left:auto;">
+        <a id="profile-view-link" href="#" target="_blank" style="font-size:12px;color:var(--acc);text-decoration:none;padding:5px 10px;border:1px solid var(--bdr);border-radius:6px;">View Dashboard →</a>
+        <button class="ico" style="font-size:15px;" onclick="closeProfile()">✕</button>
+      </div>
+    </div>
+    <div class="profile-body">
+      <div id="profile-content"><div style="color:var(--mu);text-align:center;padding:40px;">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = (()=>{
+  const p = window.location.port;
+  if(p && p !== "80" && p !== "443") return `${window.location.protocol}//${window.location.hostname}:${p === "8080" ? "8080" : p}`;
+  return `${window.location.protocol}//${window.location.hostname}:8080`;
+})();
+// Use dynamic API base in case served from Railway etc.
+const apiBase = API.includes("localhost") || API.includes("127.0.0.1") ? API :
+  window.location.origin.replace(/:\d+$/,"");
+
+// Show staging banner if backend reports ENVIRONMENT=staging
+fetch(`${API}/health`).then(r=>r.json()).then(d=>{
+  if(d.environment==="staging"){
+    const b=document.getElementById("staging-banner");
+    if(b){b.style.display="block";document.body.style.paddingTop="26px";}
+  }
+}).catch(()=>{});
+
+let adminKey = "";
+const ah = ()=>({headers:{"X-Admin-Key":adminKey,"Content-Type":"application/json"}});
+const ahNoBody = ()=>({headers:{"X-Admin-Key":adminKey}});
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────────
+async function adminLogin(){
+  const k = document.getElementById("ak").value.trim();
+  const err = document.getElementById("admin-err");
+  if(!k){err.textContent="Enter admin key.";return;}
+  try{
+    const r = await fetch(`${API}/admin/status`,{headers:{"X-Admin-Key":k}});
+    if(r.status===403){err.textContent="Wrong admin key.";return;}
+    adminKey = k;
+    localStorage.setItem("cc_admin_key",k);
+    document.getElementById("admin-login").style.display="none";
+    document.getElementById("app-body").style.display="flex";
+    const d = await r.json();
+    renderNotifStatus(d, "notif-status");
+    renderNotifStatus(d, "notif-status-settings");
+    renderServerInfo(d);
+    await loadClients();
+    await loadSensors();
+    loadDashboard();
+    loadDevices();
+    loadGpsVehicleAssignments();
+    startOfflinePoller();
+  }catch(e){err.textContent="Cannot reach backend (port 8080).";}
+}
+
+function renderNotifStatus(d, elId){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  const chips=[
+    {l:"WhatsApp",on:d.twilio_sid&&d.twilio_token&&d.twilio_from},
+    {l:"SMS",on:d.twilio_sid&&d.twilio_token},
+    {l:"Email",on:d.smtp_user&&d.smtp_pass},
+    {l:"Admin Key",on:d.admin_key_set},
+    {l:"JWT",on:d.jwt_set},
+  ];
+  el.innerHTML=chips.map(c=>`<span class="ns-chip ${c.on?"on":"off"}">${c.on?"✓":"✕"} ${c.l}</span>`).join("");
+}
+
+function renderServerInfo(d){
+  const el=document.getElementById("server-info");
+  if(!el)return;
+  el.innerHTML=`
+    <div><span class="k">Database:</span> <span class="v">${d.database_url||"unknown"}</span></div>
+    <div><span class="k">Admin Key:</span> <span class="v">${d.admin_key_set?"Set ✓":"NOT SET ⚠"}</span></div>
+    <div><span class="k">JWT Secret:</span> <span class="v">${d.jwt_set?"Set ✓":"NOT SET ⚠"}</span></div>
+    <div><span class="k">Twilio SID:</span> <span class="v">${d.twilio_sid?"Set":"Not configured"}</span></div>
+    <div><span class="k">SMTP:</span> <span class="v">${d.smtp_user?"Set":"Not configured"}</span></div>`;
+}
+
+// ── NAV ────────────────────────────────────────────────────────────────────────
+function showPage(name){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  const pg=document.getElementById("page-"+name);
+  if(pg)pg.classList.add("active");
+  const nb=event&&event.target;
+  if(nb&&nb.classList.contains("nav-btn"))nb.classList.add("active");
+  if(name==="almacen")loadAlmacen();
+  if(name==="sensors"){loadSensors();loadBleSensors();}
+  if(name==="vehicles"){loadVehicles(); populateVehicleClientFilter();}
+  if(name==="reassign"){loadBleSensors();loadDevices();loadReassignHistory();}
+  if(name==="devices"){loadDevices();loadGpsVehicleAssignments();}
+  if(name==="sims"){populateSimClientFilter(); loadSims();}
+}
+
+// ── SIM CARDS ──────────────────────────────────────────────────────────────────
+async function populateSimClientFilter(){
+  const sel=document.getElementById("sim-filter-client");
+  if(!sel)return;
+  try{
+    const clients=await fetch(`${API}/admin/clients`,ahNoBody()).then(r=>r.json());
+    const existing=new Set([...sel.options].map(o=>o.value));
+    (clients.clients||clients).forEach(c=>{
+      if(!existing.has(c.client_id)){const o=document.createElement("option");o.value=c.client_id;o.textContent=c.client_id;sel.appendChild(o);}
+    });
+  }catch(e){}
+}
+
+async function loadSims(){
+  const cid=document.getElementById("sim-filter-client").value;
+  const st=document.getElementById("sim-filter-status").value;
+  const tbody=document.getElementById("sim-tbody");
+  if(!tbody)return;
+  tbody.innerHTML='<tr><td colspan="9" class="empty">Loading…</td></tr>';
+  try{
+    let url=`${API}/admin/sims`;const p=[];
+    if(cid)p.push("client_id="+encodeURIComponent(cid));
+    if(st)p.push("status="+encodeURIComponent(st));
+    if(p.length)url+="?"+p.join("&");
+    const sims=await fetch(url,ahNoBody()).then(r=>r.json());
+    if(!sims.length){tbody.innerHTML='<tr><td colspan="9" class="empty">No SIM cards yet</td></tr>';return;}
+    tbody.innerHTML=sims.map(s=>{
+      const statusBadge=s.status==="active"?'badge-green':s.status==="suspended"?'badge-yellow':'badge-red';
+      const assignedTd=s.assigned_imei
+        ? `<td><div style="font-size:12px;font-weight:600;">IMEI: ${s.assigned_imei}</div><div style="font-size:10px;color:var(--mu);">${s.assigned_client_id||"—"}</div></td>`
+        : `<td><span style="color:var(--mu);font-style:italic;font-size:11px;">Spare</span></td>`;
+      return `<tr>
+        <td><code style="font-size:11px;background:#0d1117;padding:1px 5px;border-radius:3px;">${s.iccid}</code></td>
+        <td style="font-size:12px;">${s.phone_number||"—"}</td>
+        <td style="font-size:12px;color:var(--mu);">${s.carrier||"—"}</td>
+        <td style="font-size:11px;color:var(--mu);">${s.plan||"—"}</td>
+        <td><span class="badge ${statusBadge}">${s.status}</span></td>
+        <td style="font-size:12px;">${s.monthly_cost_eur?s.monthly_cost_eur.toFixed(2)+" €":"—"}</td>
+        <td style="font-size:11px;color:${s.expires_at && new Date(s.expires_at)<new Date()?"var(--red)":"var(--mu)"};">${s.expires_at?s.expires_at.slice(0,10):"—"}</td>
+        ${assignedTd}
+        <td>
+          ${s.assigned_imei
+            ?`<button class="sm sec" style="padding:2px 8px;font-size:10px;" onclick="unassignSim(${s.id})">Unassign</button>`
+            :`<button class="sm sec" style="padding:2px 8px;font-size:10px;" onclick="promptAssignSim(${s.id},'${s.iccid}')">Assign…</button>`}
+          <button class="sm danger" style="padding:2px 8px;font-size:10px;" onclick="deleteSim(${s.id},'${s.iccid}')">✕</button>
+        </td>
+      </tr>`;
+    }).join("");
+  }catch(e){tbody.innerHTML=`<tr><td colspan="9" class="empty" style="color:var(--red);">Error: ${e.message}</td></tr>`;}
+}
+
+async function registerSim(){
+  const iccid=document.getElementById("sim-iccid").value.trim();
+  const phone=document.getElementById("sim-phone").value.trim();
+  const carrier=document.getElementById("sim-carrier").value.trim();
+  const plan=document.getElementById("sim-plan").value.trim();
+  const cost=parseFloat(document.getElementById("sim-cost").value)||0;
+  const act=document.getElementById("sim-act").value;
+  const exp=document.getElementById("sim-exp").value;
+  const notes=document.getElementById("sim-notes").value.trim();
+  const st=document.getElementById("sim-reg-st");
+  if(!iccid){st.style.color="var(--red)";st.textContent="ICCID is required.";return;}
+  if(iccid.length<10){st.style.color="var(--red)";st.textContent="ICCID looks too short (need 10+ digits).";return;}
+  try{
+    const r=await fetch(`${API}/admin/sims`,{method:"POST",...ah(),body:JSON.stringify({
+      iccid,phone_number:phone,carrier,plan,monthly_cost_eur:cost,
+      activated_at:act,expires_at:exp,notes
+    })});
+    if(r.ok){
+      st.style.color="var(--green)";st.textContent=`✓ SIM ${iccid} registered`;
+      ["sim-iccid","sim-phone","sim-carrier","sim-plan","sim-notes"].forEach(k=>document.getElementById(k).value="");
+      document.getElementById("sim-cost").value="0";
+      await loadSims();
+    } else {
+      const e=await r.json().catch(()=>({}));
+      st.style.color="var(--red)";st.textContent=`Error ${r.status}: ${e.detail||"Failed."}`;
+    }
+  }catch(e){st.style.color="var(--red)";st.textContent="Error connecting to backend.";}
+}
+
+async function promptAssignSim(simId, iccid){
+  // Load registered GPS devices to populate dropdown
+  let devices=[];
+  try{devices=await fetch(`${API}/admin/devices`,ahNoBody()).then(r=>r.json());}catch(e){}
+
+  // Build modal content
+  const devOptions=devices.length
+    ?devices.map(d=>`<option value="${d.imei}">${d.serial_number||d.imei} — ${d.sensor_id} (${d.client_id})${d.notes?` · ${d.notes}`:""}</option>`).join("")
+    :`<option value="">No GPS devices registered yet</option>`;
+
+  document.getElementById("sim-assign-title").textContent=`Assign SIM — ${iccid}`;
+  document.getElementById("sim-assign-select").innerHTML=`<option value="">— select GPS device —</option>${devOptions}`;
+  document.getElementById("sim-assign-notes").value="";
+  document.getElementById("sim-assign-st").textContent="";
+  document.getElementById("sim-assign-save").onclick=async()=>{
+    const imei=document.getElementById("sim-assign-select").value;
+    const notes=document.getElementById("sim-assign-notes").value.trim();
+    if(!imei){document.getElementById("sim-assign-st").textContent="Select a device.";return;}
+    try{
+      const r=await fetch(`${API}/admin/sims/${simId}/assign`,{method:"POST",...ah(),body:JSON.stringify({imei,notes})});
+      if(!r.ok){const e=await r.json().catch(()=>({}));document.getElementById("sim-assign-st").textContent="Error: "+(e.detail||r.status);return;}
+      closeSIMAssignModal();
+      await loadSims();
+    }catch(e){document.getElementById("sim-assign-st").textContent="Network error.";}
+  };
+  document.getElementById("sim-assign-overlay").style.display="flex";
+}
+function closeSIMAssignModal(){document.getElementById("sim-assign-overlay").style.display="none";}
+
+async function unassignSim(simId){
+  if(!confirm("Detach this SIM from its current device?\n\nThe assignment history is kept.")) return;
+  try{
+    await fetch(`${API}/admin/sims/${simId}/unassign`,{method:"POST",...ah()});
+    await loadSims();
+  }catch(e){}
+}
+
+async function deleteSim(simId, iccid){
+  if(!confirm(`Delete SIM card ${iccid}?\n\nAssignment history is preserved but the SIM is removed from inventory.`)) return;
+  try{
+    const r=await fetch(`${API}/admin/sims/${simId}`,{method:"DELETE",...ah()});
+    if(r.ok) await loadSims();
+    else { const e=await r.json().catch(()=>({})); alert("Failed: "+(e.detail||r.status)); }
+  }catch(e){alert("Error: "+e.message);}
+}
+async function populateVehicleClientFilter(){
+  const sel=document.getElementById("veh-filter-client");
+  if(!sel)return;
+  try{
+    const clients=await fetch(`${API}/admin/clients`,ahNoBody()).then(r=>r.json());
+    const existing=new Set([...sel.options].map(o=>o.value));
+    (clients.clients||clients).forEach(c=>{
+      if(!existing.has(c.client_id)){const o=document.createElement("option");o.value=c.client_id;o.textContent=c.client_id;sel.appendChild(o);}
+    });
+  }catch(e){}
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────────
+async function loadDashboard(){
+  try{
+    const [sensors, movRes]=await Promise.all([
+      fetch(`${API}/admin/sensors`,ahNoBody()).then(r=>r.json()),
+      fetch(`${API}/admin/moving_count`,ahNoBody()).then(r=>r.json()).catch(()=>({moving:0}))
+    ]);
+    const now=new Date();
+    let online=0,warn=0,offline=0,unassigned=0;
+    const chips=sensors.map(s=>{
+      let cls, label;
+      if(!s.client_id){cls="unknown";label="unassigned";unassigned++;}
+      else if(!s.last_seen){cls="unknown";label="never seen";}
+      else{
+        const mins=(now-new Date(s.last_seen+"Z"))/60000;
+        if(mins<10){cls="online";label=Math.round(mins)+"m ago";online++;}
+        else if(mins<60){cls="unknown";label=Math.round(mins)+"m ago";warn++;}
+        else{cls="offline";label=Math.round(mins)+"m ago";offline++;}
+      }
+      const bat=s.battery_level!=null?s.battery_level+"%":"";
+      return`<div class="sg-chip" onclick="openClientProfile('${s.client_id||""}')" title="${s.hardware_id||""}\n${s.client_id||"unassigned"} · ${label}">
+        <div class="sdot ${cls}"></div>
+        <div><div class="sname">${s.sensor_id}</div><div class="sclient">${s.client_id||"—"}</div></div>
+        ${bat?`<div class="sbat">${bat}</div>`:""}
+      </div>`;
+    });
+    document.getElementById("ds-clients").textContent="—";
+    document.getElementById("ds-sensors").textContent=sensors.length;
+    document.getElementById("ds-online").textContent=online;
+    document.getElementById("ds-warn").textContent=warn;
+    document.getElementById("ds-offline").textContent=offline;
+    document.getElementById("ds-moving").textContent=movRes.moving??0;
+    document.getElementById("ds-unassigned").textContent=unassigned;
+    document.getElementById("fleet-grid").innerHTML=chips.join("")||'<div class="empty">No sensors registered</div>';
+  }catch(e){
+    document.getElementById("fleet-grid").innerHTML='<div class="empty" style="color:var(--red);">Cannot reach backend</div>';
+  }
+  // client count from loaded table
+  try{
+    const r=await fetch(`${API}/admin/clients?page=1`,ahNoBody());
+    const d=await r.json();
+    document.getElementById("ds-clients").textContent=d.total||0;
+  }catch(e){}
+}
+
+// ── OFFLINE MONITOR ────────────────────────────────────────────────────────────
+async function loadOfflineMonitor(){
+  try{
+    const data=await fetch(`${API}/admin/sensors`,ahNoBody()).then(r=>r.json());
+    const now=new Date();
+    const THRESH=60;
+    const offline=data.filter(s=>{
+      if(!s.last_seen)return true;
+      return(now-new Date(s.last_seen+"Z"))/60000>=THRESH;
+    });
+    const banner=document.getElementById("offline-banner");
+    const dot=document.getElementById("offline-dot");
+    const heading=document.getElementById("offline-heading");
+    const wrap=document.getElementById("offline-table-wrap");
+    const ind=document.getElementById("offline-indicator");
+    const cnt=document.getElementById("offline-cnt-hdr");
+    if(offline.length===0){
+      banner.className="offline-banner ok";
+      dot.style.background="var(--green)";dot.style.animation="none";
+      heading.textContent="All sensors active — no issues detected";
+      wrap.innerHTML="";
+      ind.style.display="none";
+      return;
+    }
+    banner.className="offline-banner";
+    dot.style.background="var(--red)";dot.style.animation="pulse 1.4s ease infinite";
+    heading.textContent=`${offline.length} sensor(s) not reporting (>${THRESH} min):`;
+    ind.style.display="flex";
+    cnt.textContent=offline.length+" offline";
+    wrap.innerHTML=`<table style="margin-top:6px;">
+      <thead><tr><th>Sensor</th><th>Client</th><th>Last Seen</th><th>Silent</th><th>Battery</th></tr></thead>
+      <tbody>${offline.map(s=>{
+        const mins=s.last_seen?Math.round((now-new Date(s.last_seen+"Z"))/60000):null;
+        const critCls=mins==null||mins>240?"tal":"";
+        return`<tr>
+          <td style="font-weight:600;">${s.sensor_id}</td>
+          <td>${s.client_id?`<span class="badge badge-blue">${s.client_id}</span>`:'<span style="color:var(--mu);font-style:italic;font-size:11px;">unassigned</span>'}</td>
+          <td style="font-size:11px;color:var(--mu);">${mins!=null?mins+" min ago":"Never"}</td>
+          <td class="${critCls}" style="font-weight:600;">${mins!=null?mins+" min":"—"}</td>
+          <td style="font-size:11px;">${s.battery_level!=null?s.battery_level+"%":"—"}</td>
+        </tr>`;
+      }).join("")}</tbody>
+    </table>`;
+  }catch(e){
+    document.getElementById("offline-heading").textContent="Cannot reach backend.";
+  }
+}
+function startOfflinePoller(){
+  loadOfflineMonitor();
+  setInterval(()=>{loadOfflineMonitor();loadDashboard();},120000);
+}
+
+// ── CLIENTS ────────────────────────────────────────────────────────────────────
+let _clientPage=1, _allClients=[];
+async function loadClients(page){
+  if(page!==undefined)_clientPage=page;
+  try{
+    const resp=await fetch(`${API}/admin/clients?page=${_clientPage}`,ahNoBody()).then(r=>r.json());
+    const data=Array.isArray(resp)?resp:(resp.clients||[]);
+    const total=resp.total||data.length;
+    const pageSize=resp.page_size||20;
+    _allClients=data;
+    document.getElementById("ds-clients").textContent=total;
+    const navCnt=document.getElementById("nav-client-cnt");
+    navCnt.textContent=total;navCnt.style.display=total>0?"":"none";
+    renderClientTable(data);
+    // Pager
+    const pages=Math.ceil(total/pageSize);
+    document.getElementById("clients-pager").innerHTML=pages>1?
+      `<button class="sm sec" onclick="loadClients(${_clientPage-1})" ${_clientPage<=1?"disabled":""}>◀ Prev</button>
+       <span>Page ${_clientPage}/${pages} · ${total} clients</span>
+       <button class="sm sec" onclick="loadClients(${_clientPage+1})" ${_clientPage>=pages?"disabled":""}>Next ▶</button>`:"";
+    // Populate selects
+    const optHtml=`<option value="">— unassigned —</option>`+data.map(c=>`<option value="${c.client_id}">${c.client_id}</option>`).join("");
+    ["ns-cid","ar-cid","vs-client","td-cid","esp-cid","ble-cid","veh-cid"].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el){
+        const prefix=["vs-client","td-cid","esp-cid","ble-cid","veh-cid"].includes(id)
+          ?`<option value="">— select client —</option>`
+          :`<option value="">— unassigned —</option>`;
+        el.innerHTML=prefix+data.map(c=>`<option value="${c.client_id}">${c.client_id}</option>`).join("");
+      }
+    });
+  }catch(e){}
+}
+
+function renderClientTable(data){
+  const tbody=document.getElementById("clients-tbody");
+  if(!data.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No clients yet</td></tr>';return;}
+  tbody.innerHTML=data.map(c=>`<tr onclick="openClientProfile('${c.client_id}')">
+    <td style="font-weight:700;">${c.client_id}</td>
+    <td><span class="badge badge-blue">${c.sensor_count} sensor${c.sensor_count!==1?"s":""}</span></td>
+    <td><span class="badge ${c.min_temp!=null?"badge-green":"badge-mu"}">${c.min_temp!=null?`${c.min_temp}°–${c.max_temp}°C`:"—"}</span></td>
+    <td>${c.has_password?'<span class="badge badge-green">Set</span>':'<span class="badge badge-red">Not set</span>'}</td>
+    <td style="font-size:11px;color:var(--mu);">${c.created_at?c.created_at.slice(0,10):"—"}</td>
+    <td onclick="event.stopPropagation()">
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="sm sec" onclick="openClientProfile('${c.client_id}')">👤 Profile</button>
+        <a href="/dashboard/?client=${encodeURIComponent(c.client_id)}" target="_blank"
+           style="font-size:11px;color:var(--acc);text-decoration:none;padding:4px 8px;
+                  border:1px solid var(--bdr);border-radius:6px;white-space:nowrap;">View →</a>
+        <button class="ico" style="border-color:var(--red);" onclick="deleteClient('${c.client_id}')" title="Delete">✕</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+function filterClients(){
+  const q=document.getElementById("client-search").value.trim().toLowerCase();
+  const filtered=_allClients.filter(c=>c.client_id.toLowerCase().includes(q));
+  renderClientTable(filtered);
+}
+
+async function createClient(){
+  const id=document.getElementById("nc-id").value.trim();
+  const pw=document.getElementById("nc-pw").value;
+  const minT=parseFloat(document.getElementById("nc-min").value)||2.0;
+  const maxT=parseFloat(document.getElementById("nc-max").value)||8.0;
+  const st=document.getElementById("nc-st");
+  if(!id){st.style.color="var(--red)";st.textContent="Enter a client ID.";return;}
+  if(pw.length<4){st.style.color="var(--red)";st.textContent="Password must be ≥ 4 chars.";return;}
+  if(minT>=maxT){st.style.color="var(--red)";st.textContent="Min temp must be less than max temp.";return;}
+  try{
+    const r=await fetch(`${API}/admin/clients`,{method:"POST",...ah(),body:JSON.stringify({client_id:id,password:pw,min_temp:minT,max_temp:maxT})});
+    if(r.ok){
+      st.style.color="var(--green)";st.textContent=`✓ Client "${id}" created.`;
+      ["nc-id","nc-pw"].forEach(k=>document.getElementById(k).value="");
+      document.getElementById("nc-min").value="2.0";
+      document.getElementById("nc-max").value="8.0";
+      await loadClients();
+    } else {
+      const d=await r.json().catch(()=>({}));
+      st.style.color="var(--red)";st.textContent=d.detail||"Failed.";
+    }
+  }catch(e){st.style.color="var(--red)";st.textContent="Error.";}
+}
+
+async function deleteClient(id){
+  if(!confirm(`Delete client "${id}"?\n\nThis removes threshold, password, and contacts.\nSensor readings are kept.`))return;
+  try{
+    await fetch(`${API}/admin/clients/${encodeURIComponent(id)}`,{method:"DELETE",...ahNoBody()});
+    await loadClients();
+  }catch(e){}
+}
+
+// ── CLIENT PROFILE ─────────────────────────────────────────────────────────────
+async function openClientProfile(clientId){
+  if(!clientId)return;
+  document.getElementById("client-profile").style.display="flex";
+  document.getElementById("profile-title").textContent=clientId;
+  document.getElementById("profile-sub").textContent="Loading profile…";
+  document.getElementById("profile-view-link").href=`/dashboard/?client=${encodeURIComponent(clientId)}`;
+  document.getElementById("profile-content").innerHTML='<div style="color:var(--mu);text-align:center;padding:40px;">Loading…</div>';
+  try{
+    const [profileResp, gpsResp] = await Promise.all([
+      fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}`, ahNoBody()),
+      fetch(`${API}/admin/devices`, ahNoBody())
+    ]);
+    if(!profileResp.ok){const errBody=await profileResp.json().catch(()=>({}));throw new Error(`${profileResp.status}: ${errBody.detail||profileResp.statusText}`);}
+    const d = await profileResp.json();
+    const allDevices = gpsResp.ok ? await gpsResp.json() : [];
+    const clientDevices = allDevices.filter(dev=>dev.client_id===clientId);
+    const now=new Date();
+    document.getElementById("profile-sub").textContent=`${d.reading_count||0} readings · ${d.sensors.length} sensor(s) · ${clientDevices.length} GPS device(s)`;
+    const alarmStatus=d.threshold?
+      (d.threshold.alert_active?'<span style="color:var(--red);font-weight:700;">🚨 ACTIVE</span>':'<span style="color:var(--green);">✓ Clear</span>'):"—";
+    document.getElementById("profile-content").innerHTML=`
+      <div class="profile-section">
+        <h3>Account</h3>
+        <div class="profile-kv">
+          <div><span class="k">Client ID:</span> <span class="v">${d.client_id}</span></div>
+          <div><span class="k">Created:</span> <span class="v">${d.created_at?d.created_at.slice(0,10):"—"}</span></div>
+          <div><span class="k">Password:</span> <span class="v">${d.has_password?"Set ✓":"Not set"}</span></div>
+          <div><span class="k">Readings:</span> <span class="v">${d.reading_count}</span></div>
+          <div><span class="k">Alarm state:</span> <span class="v">${alarmStatus}</span></div>
+          <div><span class="k">Alerts sent:</span> <span class="v">${d.threshold?.messages_sent??0}</span></div>
+          <div><span class="k">Data retention:</span> <span class="v">${d.threshold?.data_retention_years??5} years</span>
+            <button class="sm sec" style="margin-left:8px;padding:2px 8px;font-size:11px;" onclick="setRetention('${d.client_id}',${d.threshold?.data_retention_years??5})">Edit</button>
+          </div>
+          <div><span class="k">CSV Import:</span>
+            <span class="v badge ${(d.threshold?.can_import??0)?'badge-green':'badge-mu'}">${(d.threshold?.can_import??0)?'Enabled':'Disabled'}</span>
+            <button class="sm sec" style="margin-left:8px;padding:2px 8px;font-size:11px;" onclick="toggleImport('${d.client_id}',${d.threshold?.can_import??0})">${(d.threshold?.can_import??0)?'Disable':'Enable'}</button>
+          </div>
+          <div><span class="k">Max Users:</span> <span class="v">${d.threshold?.max_users??1}</span>
+            <button class="sm sec" style="margin-left:8px;padding:2px 8px;font-size:11px;" onclick="setMaxUsers('${d.client_id}',${d.threshold?.max_users??1})">Edit</button>
+          </div>
+        </div>
+      </div>
+      <div class="profile-section">
+        <h3>Alarm Rules (${d.alarm_rules.length})</h3>
+        ${d.alarm_rules.length?d.alarm_rules.map(r=>`
+          <div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:12px;">
+            <span style="flex:1;font-weight:600;">${r.name}${r.sensor_id?" · "+r.sensor_id:""}</span>
+            <span style="color:var(--mu);">${r.min_temp}°–${r.max_temp}°C · ${r.delay}min</span>
+            <span class="badge ${r.status==="active"?"badge-green":"badge-mu"}">${r.status}</span>
+          </div>`).join(""):'<div class="empty" style="padding:6px 0;">No alarm rules configured</div>'}
+      </div>
+      <div class="profile-section">
+        <h3>GPS Devices (${clientDevices.length})</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${clientDevices.length?clientDevices.map(dev=>`
+            <div class="sensor-chip" style="min-width:180px;">
+              <span style="font-size:14px;">📟</span>
+              <div>
+                <div style="font-weight:700;font-size:11px;">${dev.sensor_id}</div>
+                <div style="font-size:10px;color:var(--mu);">IMEI: ${dev.imei}</div>
+                <div style="font-size:10px;color:var(--mu);">${dev.notes||""}</div>
+              </div>
+            </div>`).join(""):'<div class="empty" style="padding:6px 0;">No GPS devices assigned</div>'}
+        </div>
+      </div>
+      <div class="profile-section">
+        <h3>Sensors (${d.sensors.length})</h3>
+        <div style="display:flex;flex-wrap:wrap;">
+          ${d.sensors.map(s=>{
+            const lastMins=s.last_seen?Math.round((now-new Date(s.last_seen+"Z"))/60000):null;
+            const cls=lastMins==null?"unknown":lastMins<10?"online":lastMins<60?"unknown":"offline";
+            return`<div class="sensor-chip">
+              <span class="sdot ${cls}"></span>
+              <div><div style="font-weight:700;">${s.sensor_id}</div>
+              <div style="font-size:10px;color:var(--mu);">${s.plate?`🚗 ${s.plate} · `:""}${lastMins!=null?lastMins+"m ago":"never"}</div></div>
+            </div>`;
+          }).join("")||'<div class="empty" style="padding:6px 0;">No sensors</div>'}
+        </div>
+      </div>
+      <div class="profile-section">
+        <h3>Alert Contacts (${d.contacts.length})</h3>
+        ${d.contacts.length?d.contacts.map(c=>`
+          <div style="font-size:12px;padding:4px 0;"><span class="badge badge-blue">${c.type}</span> ${c.value}</div>`).join(""):'<div class="empty" style="padding:4px 0;">No contacts configured</div>'}
+      </div>
+      <div class="profile-section">
+        <h3>Recent Alerts</h3>
+        ${d.recent_alerts.length?`<table>
+          <thead><tr><th>Sensor</th><th>Temp</th><th>Direction</th><th>When</th></tr></thead>
+          <tbody>${d.recent_alerts.map(a=>`<tr>
+            <td style="font-weight:600;">${a.sensor_id}</td>
+            <td style="color:${a.direction==="too_high"?"var(--red)":"var(--blue)"};">${a.temperature?.toFixed(1)}°C</td>
+            <td>${a.direction==="too_high"?"↑ Too High":"↓ Too Low"}</td>
+            <td style="font-size:11px;color:var(--mu);">${a.timestamp?.slice(0,16)}</td>
+          </tr>`).join("")}</tbody>
+        </table>`:'<div class="empty">No alerts yet</div>'}
+      </div>
+      <div class="profile-section" id="vehicle-hist-section-${d.client_id}">
+        <h3>Vehicle Assignment History</h3>
+        <div id="vehicle-hist-${d.client_id}" style="color:var(--mu);font-size:12px;">Loading…</div>
+      </div>
+      <div class="profile-section" id="users-section-${d.client_id}">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+          <span>Users <span style="font-size:11px;color:var(--mu);font-weight:400;">— max ${d.threshold?.max_users??1}</span></span>
+          <button class="sm sec" style="font-size:11px;padding:3px 8px;" onclick="promptAddUser('${d.client_id}')">+ Add User</button>
+        </h3>
+        <div id="users-list-${d.client_id}" style="color:var(--mu);font-size:12px;">Loading…</div>
+      </div>
+      <div class="profile-section" id="sessions-section-${d.client_id}">
+        <h3>Active Sessions</h3>
+        <div id="sessions-list-${d.client_id}" style="color:var(--mu);font-size:12px;">Loading…</div>
+      </div>
+      <div class="profile-section" id="sub-section-${d.client_id}">
+        <h3>Subscription</h3>
+        <div id="sub-info-${d.client_id}" style="color:var(--mu);font-size:12px;">Loading…</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center;">
+          <select id="sub-plan-${d.client_id}" style="font-size:12px;padding:4px 8px;">
+            <option value="">— Select plan —</option>
+            <option value="starter">Starter — €29/mo</option>
+            <option value="growth">Growth — €79/mo</option>
+            <option value="fleet">Fleet — €199/mo</option>
+          </select>
+          <button class="sm green" onclick="assignSubscription('${d.client_id}')">Assign Plan</button>
+          <button class="sm danger" onclick="cancelSubscription('${d.client_id}')">Cancel Subscription</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="danger sm" onclick="deleteClient('${d.client_id}');closeProfile();">Delete Client</button>
+        <button class="sm sec" onclick="promptResetPassword('${d.client_id}')">🔑 Reset Password</button>
+        <button class="sm sec" onclick="purgeOrphans('${d.client_id}')" title="Delete sensor_health & readings whose sensor_id is no longer registered">🧹 Purge Orphan Data</button>
+        <a href="/dashboard/?client=${encodeURIComponent(d.client_id)}" target="_blank"
+           style="font-size:12px;color:var(--acc);text-decoration:none;padding:5px 12px;border:1px solid var(--bdr);border-radius:6px;">Open Dashboard →</a>
+      </div>`;
+    _loadSubInfo(clientId);
+    _loadVehicleHistory(clientId);
+    _loadUsers(clientId);
+    _loadSessions(clientId);
+  }catch(e){
+    document.getElementById("profile-sub").textContent="Error";
+    document.getElementById("profile-content").innerHTML=`<div class="empty" style="color:var(--red);">Failed to load profile: ${e.message}</div>`;
+  }
+}
+function closeProfile(){document.getElementById("client-profile").style.display="none";}
+
+async function setRetention(clientId, current){
+  const yrs=prompt(`Data retention years for ${clientId} (1–10):`, current??5);
+  if(yrs===null)return;
+  const n=parseInt(yrs);
+  if(isNaN(n)||n<1||n>10){alert("Please enter a number between 1 and 10.");return;}
+  try{
+    const r=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/retention?years=${n}`,{method:"PATCH",...ahNoBody()});
+    if(!r.ok){const e=await r.json().catch(()=>({}));alert("Error: "+(e.detail||r.status));return;}
+    alert(`Retention set to ${n} years for ${clientId}.`);
+    openClientProfile(clientId);  // reload profile
+  }catch(e){alert("Failed to set retention.");}
+}
+
+async function purgeOrphans(clientId){
+  try{
+    const dry=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/purge_orphans?dry_run=1`,{method:"POST",...ahNoBody()});
+    const dr=await dry.json();
+    if(!dr.orphan_sensors||!dr.orphan_sensors.length){
+      alert(`✓ ${clientId} has no orphan sensors. Registered: ${dr.registered_gps} GPS + ${dr.registered_eye} EYE.`);
+      return;
+    }
+    if(!confirm(`Found ${dr.orphan_sensors.length} orphan sensor(s) for '${clientId}':\n\n` +
+                dr.orphan_sensors.join("\n") +
+                `\n\nThis will delete:\n  • ${dr.orphan_sensors.length} sensor_health row(s)\n  • ${dr.orphan_reading_count} reading(s)\n\nContinue?`)) return;
+    const r=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/purge_orphans`,{method:"POST",...ahNoBody()});
+    if(!r.ok){const e=await r.json().catch(()=>({}));alert("Failed: "+(e.detail||r.status));return;}
+    const res=await r.json();
+    alert(`✓ Purged ${res.deleted_sensors.length} sensors + ${res.deleted_readings} reading(s).`);
+    openClientProfile(clientId);
+  }catch(e){alert("Error: "+e.message);}
+}
+
+async function toggleImport(clientId, current){
+  const enable=current?0:1;
+  try{
+    const r=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/can_import?enabled=${enable}`,{method:"PATCH",...ahNoBody()});
+    if(!r.ok){const e=await r.json().catch(()=>({}));alert("Error: "+(e.detail||r.status));return;}
+    openClientProfile(clientId);
+  }catch(e){alert("Failed.");}
+}
+
+async function _loadUsers(clientId){
+  const el=document.getElementById(`users-list-${clientId}`);
+  if(!el)return;
+  try{
+    const r=await fetch(`${API}/users/${encodeURIComponent(clientId)}`,ahNoBody());
+    if(!r.ok){el.innerHTML="<span style='color:var(--mu);'>Could not load users.</span>";return;}
+    const d=await r.json();
+    const usage=`<div style="font-size:11px;color:var(--mu);margin-bottom:6px;">${d.used}/${d.max_users} additional user${d.max_users===1?"":"s"} used — owner login is always available.</div>`;
+    if(!d.users.length){el.innerHTML=usage+"<div class='empty' style='padding:6px 0;'>No additional users — only the owner login works</div>";return;}
+    el.innerHTML=usage+`<table>
+      <thead><tr><th>Email</th><th>Name</th><th>Role</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead>
+      <tbody>${d.users.map(u=>`<tr>
+        <td style="font-weight:600;font-size:12px;">${u.email}</td>
+        <td style="font-size:11px;color:var(--mu);">${u.name||"—"}</td>
+        <td><span class="badge ${u.role==='owner'?'badge-blue':u.role==='admin'?'badge-yellow':'badge-mu'}">${u.role}</span></td>
+        <td><span class="badge ${u.status==='active'?'badge-green':'badge-red'}">${u.status}</span></td>
+        <td style="font-size:11px;color:var(--mu);">${u.last_login?u.last_login.slice(0,16):"never"}</td>
+        <td><button class="sm danger" style="padding:2px 8px;font-size:10px;" onclick="deleteUser('${clientId}',${u.id},'${u.email}')">✕</button></td>
+      </tr>`).join("")}</tbody></table>`;
+  }catch(e){el.innerHTML="<span style='color:var(--red);'>Error</span>";}
+}
+
+async function _loadSessions(clientId){
+  const el=document.getElementById(`sessions-list-${clientId}`);
+  if(!el)return;
+  try{
+    const r=await fetch(`${API}/sessions/${encodeURIComponent(clientId)}?active_only=1`,ahNoBody());
+    if(!r.ok){el.innerHTML="<span style='color:var(--mu);'>Could not load sessions.</span>";return;}
+    const sessions=await r.json();
+    if(!sessions.length){el.innerHTML="<div class='empty' style='padding:6px 0;'>No active sessions</div>";return;}
+    el.innerHTML=`<table>
+      <thead><tr><th>User</th><th>Issued</th><th>Expires</th><th>IP</th><th>Device</th><th></th></tr></thead>
+      <tbody>${sessions.map(s=>{
+        const ua=(s.user_agent||"").split(/[()]/)[1]||(s.user_agent||"").slice(0,30);
+        return `<tr>
+          <td style="font-weight:600;font-size:12px;">${s.email}${s.name?` <span style="color:var(--mu);font-weight:400;">(${s.name})</span>`:""}</td>
+          <td style="font-size:11px;color:var(--mu);">${s.issued_at?.slice(0,16)||"—"}</td>
+          <td style="font-size:11px;color:var(--mu);">${s.expires_at?.slice(0,16)||"—"}</td>
+          <td style="font-size:11px;color:var(--mu);">${s.ip||"—"}</td>
+          <td style="font-size:10px;color:var(--mu);">${ua}</td>
+          <td><button class="sm danger" style="padding:2px 8px;font-size:10px;" onclick="revokeSession('${clientId}',${s.id})">Revoke</button></td>
+        </tr>`;
+      }).join("")}</tbody></table>`;
+  }catch(e){el.innerHTML="<span style='color:var(--red);'>Error</span>";}
+}
+
+async function promptAddUser(clientId){
+  const email=prompt(`Email for new user under '${clientId}':`);
+  if(!email)return;
+  const name=prompt("Name (optional):")||"";
+  const role=prompt("Role: owner / admin / viewer", "viewer");
+  if(!role||!["owner","admin","viewer"].includes(role.trim().toLowerCase())){alert("Invalid role.");return;}
+  const password=prompt("Initial password (≥ 4 chars):");
+  if(!password||password.length<4){alert("Password too short.");return;}
+  try{
+    const r=await fetch(`${API}/users/${encodeURIComponent(clientId)}`,{method:"POST",...ah(),
+      body:JSON.stringify({email:email.trim().toLowerCase(),name,role:role.trim().toLowerCase(),password})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));alert("Failed: "+(e.detail||r.status));return;}
+    alert(`✓ User '${email}' created.`);
+    _loadUsers(clientId);
+  }catch(e){alert("Error: "+e.message);}
+}
+
+async function deleteUser(clientId, userId, email){
+  if(!confirm(`Delete user '${email}'?\nTheir active sessions will be revoked.`))return;
+  try{
+    const r=await fetch(`${API}/users/${encodeURIComponent(clientId)}/${userId}`,{method:"DELETE",...ah()});
+    if(!r.ok){const e=await r.json().catch(()=>({}));alert("Failed: "+(e.detail||r.status));return;}
+    _loadUsers(clientId);
+    _loadSessions(clientId);
+  }catch(e){alert("Error: "+e.message);}
+}
+
+async function revokeSession(clientId, sessionId){
+  if(!confirm("Revoke this session? The user will be logged out immediately."))return;
+  try{
+    await fetch(`${API}/sessions/${encodeURIComponent(clientId)}/${sessionId}`,{method:"DELETE",...ah()});
+    _loadSessions(clientId);
+  }catch(e){alert("Error: "+e.message);}
+}
+
+async function setMaxUsers(clientId, current){
+  const n=prompt(`Max users for ${clientId} (1-50):`, current||1);
+  if(n===null)return;
+  const v=parseInt(n);
+  if(isNaN(v)||v<1||v>50){alert("Enter a number between 1 and 50.");return;}
+  try{
+    const r=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/max_users?n=${v}`,{method:"PATCH",...ahNoBody()});
+    if(!r.ok){const e=await r.json().catch(()=>({}));alert("Failed: "+(e.detail||r.status));return;}
+    alert(`✓ Max users set to ${v}`);
+    openClientProfile(clientId);
+  }catch(e){alert("Error: "+e.message);}
+}
+
+async function _loadVehicleHistory(clientId){
+  const el=document.getElementById(`vehicle-hist-${clientId}`);
+  if(!el)return;
+  try{
+    const r=await fetch(`${API}/vehicle_assignments/${encodeURIComponent(clientId)}/history?limit=50`,ahNoBody());
+    if(!r.ok){el.innerHTML="<span style='color:var(--mu);'>Could not load history.</span>";return;}
+    const hist=await r.json();
+    if(!hist.length){el.innerHTML="<div class='empty' style='padding:6px 0;'>No vehicle assignments recorded yet</div>";return;}
+    el.innerHTML=`<div style="max-height:240px;overflow-y:auto;border:1px solid var(--bdr);border-radius:6px;">
+      <table>
+        <thead><tr>
+          <th style="font-size:11px;">Plate</th>
+          <th style="font-size:11px;">IMEI</th>
+          <th style="font-size:11px;">EYE MAC</th>
+          <th style="font-size:11px;">Driver</th>
+          <th style="font-size:11px;">Assigned</th>
+          <th style="font-size:11px;">Unassigned</th>
+        </tr></thead>
+        <tbody>${hist.map(h=>`<tr>
+          <td style="font-weight:600;font-size:12px;">${h.plate}</td>
+          <td style="font-size:11px;color:var(--mu);">${h.imei||"—"}</td>
+          <td style="font-size:11px;color:var(--mu);">${h.eye_mac||"—"}</td>
+          <td style="font-size:11px;color:var(--mu);">${h.driver_name||"—"}</td>
+          <td style="font-size:11px;color:var(--mu);">${h.assigned_at?.slice(0,16)||"—"}</td>
+          <td style="font-size:11px;color:${h.unassigned_at?'var(--mu)':'var(--green)'};font-weight:${h.unassigned_at?'400':'600'};">
+            ${h.unassigned_at?h.unassigned_at.slice(0,16):"● Active"}
+          </td>
+        </tr>`).join("")}</tbody>
+      </table>
+    </div>`;
+  }catch(e){el.innerHTML="<span style='color:var(--red);'>Error loading history</span>";}
+}
+
+async function _loadSubInfo(clientId){
+  const el=document.getElementById(`sub-info-${clientId}`);
+  if(!el)return;
+  try{
+    const d=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/subscription`,ahNoBody()).then(r=>r.json());
+    const statusColor=d.subscription_status==="active"?"var(--green)":d.subscription_status==="trialing"?"var(--blue)":d.subscription_status==="none"||!d.subscription_status?"var(--mu)":"var(--red)";
+    el.innerHTML=`<span style="display:inline-block;padding:2px 8px;border-radius:8px;font-weight:700;font-size:11px;background:${statusColor}22;color:${statusColor};">${(d.subscription_status||"none").toUpperCase()}</span>`+
+      (d.plan?` <span style="font-size:12px;color:var(--fg);margin-left:6px;font-weight:600;">${d.plan}</span>`:"")+(d.current_period_end?` <span style="font-size:11px;color:var(--mu);margin-left:6px;">until ${d.current_period_end.slice(0,10)}</span>`:"");
+  }catch(e){el.innerHTML='<span style="color:var(--mu);">Unavailable</span>';}
+}
+
+async function assignSubscription(clientId){
+  const plan=document.getElementById(`sub-plan-${clientId}`).value;
+  if(!plan){alert("Select a plan first.");return;}
+  if(!confirm(`Assign ${plan} plan to ${clientId}?`))return;
+  try{
+    const r=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/subscription`,{method:"POST",...ah(),body:JSON.stringify({plan})});
+    const d=await r.json();
+    if(!r.ok){alert(d.detail||"Failed.");return;}
+    alert(`✓ ${plan} plan assigned. Status: ${d.subscription_status}`);
+    await _loadSubInfo(clientId);
+  }catch(e){alert("Error: "+e.message);}
+}
+
+async function cancelSubscription(clientId){
+  if(!confirm(`Cancel subscription for ${clientId}? It will remain active until the end of the billing period.`))return;
+  try{
+    const r=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/subscription`,{method:"DELETE",...ahNoBody()});
+    const d=await r.json();
+    if(!r.ok){alert(d.detail||"Failed.");return;}
+    alert(`✓ Subscription will cancel at period end (${d.current_period_end?.slice(0,10)}).`);
+    await _loadSubInfo(clientId);
+  }catch(e){alert("Error: "+e.message);}
+}
+
+// ── SENSORS ────────────────────────────────────────────────────────────────────
+let _allSensors=[];
+async function loadSensors(){
+  try{
+    _allSensors=await fetch(`${API}/admin/sensors`,ahNoBody()).then(r=>r.json());
+    renderSensors(_allSensors);
+  }catch(e){}
+}
+function renderSensors(data){
+  const tbody=document.getElementById("sensors-tbody");
+  if(!data.length){tbody.innerHTML='<tr><td colspan="8" class="empty">No sensors registered yet</td></tr>';return;}
+  const now=new Date();
+  tbody.innerHTML=data.map(s=>{
+    const lastMins=s.last_seen?Math.round((now-new Date(s.last_seen+"Z"))/60000):null;
+    const cls=lastMins==null?"badge-mu":lastMins<10?"badge-green":lastMins<60?"badge-yellow":"badge-red";
+    const label=lastMins!=null?lastMins+"m ago":"Never";
+    const bat=s.battery_level!=null?s.battery_level+"%":"—";
+    return`<tr>
+      <td><code style="font-size:11px;background:#0d1117;padding:1px 5px;border-radius:3px;">${s.hardware_id}</code></td>
+      <td style="font-weight:700;">${s.sensor_id}</td>
+      <td>${s.client_id?`<span class="badge badge-blue" style="cursor:pointer;" onclick="openClientProfile('${s.client_id}')">${s.client_id}</span>`:'<span style="color:var(--mu);font-size:11px;font-style:italic;">unassigned</span>'}</td>
+      <td><span class="badge ${cls}">${label}</span></td>
+      <td style="font-size:11px;">${bat}</td>
+      <td style="font-size:11px;">${s.plate||"—"}</td>
+      <td style="font-size:11px;color:var(--mu);">${s.notes||"—"}</td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="sm sec" onclick="showAssign(${s.id},'${s.client_id||''}')">Assign</button>
+          <button class="ico" onclick="deleteSensor(${s.id})" title="Remove">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+}
+function filterSensors(){
+  const q=document.getElementById("sensor-search").value.trim().toLowerCase();
+  if(!q){renderSensors(_allSensors);return;}
+  renderSensors(_allSensors.filter(s=>(s.hardware_id||"").toLowerCase().includes(q)||(s.sensor_id||"").toLowerCase().includes(q)||(s.client_id||"").toLowerCase().includes(q)||(s.notes||"").toLowerCase().includes(q)));
+}
+
+async function registerSensor(){
+  const hw=document.getElementById("ns-hw").value.trim();
+  const sid=document.getElementById("ns-sid").value.trim();
+  const cid=document.getElementById("ns-cid").value;
+  const notes=document.getElementById("ns-notes").value.trim();
+  const st=document.getElementById("ns-st");
+  if(!hw){st.style.color="var(--red)";st.textContent="Enter hardware ID.";return;}
+  if(!sid){st.style.color="var(--red)";st.textContent="Enter sensor ID.";return;}
+  try{
+    const r=await fetch(`${API}/admin/sensors`,{method:"POST",...ah(),body:JSON.stringify({hardware_id:hw,sensor_id:sid,client_id:cid,notes})});
+    if(r.status===409){st.style.color="var(--yellow)";st.textContent="Hardware ID already registered.";return;}
+    if(r.ok){
+      st.style.color="var(--green)";st.textContent=`✓ Sensor "${sid}" registered.`;
+      ["ns-hw","ns-sid","ns-notes"].forEach(k=>document.getElementById(k).value="");
+      document.getElementById("ns-cid").value="";
+      await loadSensors();
+    } else {st.style.color="var(--red)";st.textContent="Failed.";}
+  }catch(e){st.style.color="var(--red)";st.textContent="Error.";}
+}
+
+function showAssign(id,currentClient){
+  document.getElementById("assign-row").style.display="block";
+  document.getElementById("ar-sid").value=id;
+  document.getElementById("ar-cid").value=currentClient||"";
+  document.getElementById("assign-row").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+async function doAssign(){
+  const id=parseInt(document.getElementById("ar-sid").value);
+  const cid=document.getElementById("ar-cid").value;
+  const st=document.getElementById("ar-st");
+  try{
+    const r=await fetch(`${API}/admin/sensors/${id}/assign`,{method:"PUT",...ah(),body:JSON.stringify({client_id:cid})});
+    if(r.ok){
+      st.style.color="var(--green)";st.textContent=cid?`✓ Assigned to ${cid}.`:"✓ Unassigned.";
+      document.getElementById("assign-row").style.display="none";
+      await loadSensors();
+    } else {st.style.color="var(--red)";st.textContent="Failed.";}
+  }catch(e){st.style.color="var(--red)";st.textContent="Error.";}
+}
+
+async function deleteSensor(id){
+  if(!confirm("Remove this sensor from inventory?"))return;
+  try{
+    await fetch(`${API}/admin/sensors/${id}`,{method:"DELETE",...ahNoBody()});
+    await loadSensors();
+  }catch(e){}
+}
+
+// ── UNIFIED REGISTRATION ───────────────────────────────────────────────────────
+function setRegType(type){
+  ["gps","esp","ble"].forEach(t=>{
+    document.getElementById("reg-"+t+"-fields").style.display=t===type?"block":"none";
+    const btn=document.getElementById("reg-type-"+t);
+    btn.style.background=t===type?"var(--acc)":"";
+    btn.style.color=t===type?"#0d1117":"";
+    btn.className=t===type?"sm":"sm sec";
+  });
+}
+
+// ── TELTONIKA DEVICES ──────────────────────────────────────────────────────────
+let _allDevices=[], _devicePlateMap={};
+async function loadDevices(){
+  try{
+    const [data, activeAssign]=await Promise.all([
+      fetch(`${API}/admin/devices`,ahNoBody()).then(r=>r.json()),
+      fetch(`${API}/admin/gps_vehicle_assignments`,ahNoBody()).then(r=>r.json()).catch(()=>[])
+    ]);
+    _devicePlateMap={};
+    for(const a of activeAssign)_devicePlateMap[a.imei]=a.plate;
+    _allDevices=data;
+    renderDevices(_allDevices);
+    const sel=document.getElementById("gva-imei");
+    if(sel){
+      sel.innerHTML='<option value="">— select GPS device —</option>'+
+        data.map(d=>`<option value="${d.imei}">${d.imei} · ${d.sensor_id} (${d.client_id})${_devicePlateMap[d.imei]?" ["+_devicePlateMap[d.imei]+"]":""}</option>`).join("");
+    }
+    const rasDev=document.getElementById("ras-device");
+    if(rasDev){
+      rasDev.innerHTML='<option value="">— select GPS device —</option>'+
+        data.map(d=>`<option value="${d.imei}">${d.imei} · ${d.sensor_id} (${d.client_id})</option>`).join("");
+    }
+  }catch(e){}
+}
+function renderDevices(data){
+  const tbody=document.getElementById("devices-tbody");
+  if(!data.length){tbody.innerHTML='<tr><td colspan="9" class="empty">No devices registered yet</td></tr>';return;}
+  tbody.innerHTML=data.map(d=>`<tr>
+    <td><code style="font-size:11px;background:#0d1117;padding:1px 5px;border-radius:3px;">${d.imei}</code></td>
+    <td style="font-size:11px;color:var(--mu);">${d.serial_number||"—"}</td>
+    <td style="font-weight:600;">${d.sensor_id}</td>
+    <td><span class="badge badge-blue">${d.client_id}</span></td>
+    <td style="font-size:11px;color:var(--mu);">${d.rms_device_id||"—"}</td>
+    <td style="font-size:11px;color:var(--mu);">${d.notes||"—"}</td>
+    <td>${_devicePlateMap[d.imei]?`<span class="badge badge-green">🚗 ${_devicePlateMap[d.imei]}</span>`:`<span style="color:var(--mu);font-size:11px;">—</span>`}</td>
+    <td style="font-size:11px;color:var(--mu);">${d.registered_at?.slice(0,10)||"—"}</td>
+    <td style="white-space:nowrap;"><button class="ico" style="margin-right:4px;" onclick="editDevice('${d.imei}','${(d.serial_number||'').replace(/'/g,"\\'")}','${(d.notes||'').replace(/'/g,"\\'")}')">✏️</button><button class="ico" onclick="deleteDevice('${d.imei}')" title="Remove">✕</button></td>
+  </tr>`).join("");
+}
+function filterDevices(){
+  const q=document.getElementById("device-search").value.trim().toLowerCase();
+  if(!q){renderDevices(_allDevices);return;}
+  renderDevices(_allDevices.filter(d=>(d.imei||"").toLowerCase().includes(q)||(d.sensor_id||"").toLowerCase().includes(q)||(d.client_id||"").toLowerCase().includes(q)||(_devicePlateMap[d.imei]||"").toLowerCase().includes(q)||(d.notes||"").toLowerCase().includes(q)));
+}
+
+async function registerDevice(){
+  const imei=document.getElementById("td-imei").value.trim();
+  const sn=document.getElementById("td-sn").value.trim();
+  const sid=document.getElementById("td-sid").value.trim();
+  const cid=document.getElementById("td-cid").value;
+  const notes=document.getElementById("td-notes").value.trim();
+  const rms=document.getElementById("td-rms").value.trim();
+  const st=document.getElementById("td-st");
+  if(!imei||!cid){st.style.color="var(--red)";st.textContent="IMEI and Client are required.";return;}
+  if(!sn){st.style.color="var(--red)";st.textContent="Serial number is required (printed on the FMB920 housing — this is what the client sees).";return;}
+  try{
+    const r=await fetch(`${API}/admin/register_device`,{method:"POST",...ah(),body:JSON.stringify({imei,serial_number:sn,sensor_id:sid,client_id:cid,notes,rms_device_id:rms})});
+    if(r.ok){
+      const res=await r.json();
+      st.style.color="var(--green)";st.textContent=`✓ Device ${imei} registered (sensor_id: ${res.sensor_id}).`;
+      ["td-imei","td-sn","td-sid","td-notes","td-rms"].forEach(k=>document.getElementById(k).value="");
+      await loadDevices();
+    } else {
+      const err=await r.json().catch(()=>({}));
+      st.style.color="var(--red)";st.textContent=`Error ${r.status}: ${err.detail||r.statusText||"Failed."}`;
+    }
+  }catch(e){st.style.color="var(--red)";st.textContent="Error connecting to backend.";}
+}
+
+async function registerEsp(){
+  const hw=document.getElementById("esp-hwid").value.trim();
+  const sid=document.getElementById("esp-sid").value.trim();
+  const cid=document.getElementById("esp-cid").value;
+  const notes=document.getElementById("esp-notes").value.trim();
+  const st=document.getElementById("td-st");
+  if(!hw||!sid){st.style.color="var(--red)";st.textContent="Hardware ID and Sensor ID required.";return;}
+  try{
+    const r=await fetch(`${API}/admin/sensors`,{method:"POST",...ah(),body:JSON.stringify({hardware_id:hw,sensor_id:sid,client_id:cid,notes})});
+    if(r.status===409){st.style.color="var(--yellow)";st.textContent="Hardware ID already registered.";return;}
+    if(r.ok){
+      st.style.color="var(--green)";st.textContent=`✓ ESP32 sensor ${sid} registered.`;
+      ["esp-hwid","esp-sid","esp-notes"].forEach(k=>document.getElementById(k).value="");
+      await loadSensors();
+    } else {
+      const err=await r.json().catch(()=>({}));
+      st.style.color="var(--red)";st.textContent=err.detail||"Failed.";
+    }
+  }catch(e){st.style.color="var(--red)";st.textContent="Error.";}
+}
+
+async function registerBle(){
+  const mac=(document.getElementById("ble-mac")||{}).value?.trim()||"";
+  const cid=(document.getElementById("ble-cid")||{}).value||"";
+  const sn=(document.getElementById("ble-sn")||{}).value?.trim()||"";
+  const label=(document.getElementById("ble-label")||{}).value?.trim()||"";
+  const st=document.getElementById("ble-reg-st")||document.getElementById("td-st");
+  if(!mac||!cid){if(st){st.style.color="var(--red)";st.textContent="MAC address and Client required.";}return;}
+  if(!sn){if(st){st.style.color="var(--red)";st.textContent="Serial number is required (printed on the EYE Sensor housing — this is what the client sees).";}return;}
+  try{
+    const r=await fetch(`${API}/admin/ble_sensors`,{method:"POST",...ah(),body:JSON.stringify({mac_address:mac,client_id:cid,serial_number:sn,label})});
+    if(r.ok){
+      if(st){st.style.color="var(--green)";st.textContent=`✓ EYE Sensor ${mac} registered.`;}
+      ["ble-mac","ble-sn","ble-label"].forEach(k=>{const el=document.getElementById(k);if(el)el.value="";});
+      await loadBleSensors();
+    } else {
+      const err=await r.json().catch(()=>({}));
+      if(st){st.style.color="var(--red)";st.textContent=err.detail||"Failed.";}
+    }
+  }catch(e){if(st){st.style.color="var(--red)";st.textContent="Error.";}}
+}
+
+async function deleteDevice(imei){
+  if(!confirm(`Remove device ${imei}?`))return;
+  try{
+    await fetch(`${API}/admin/devices/${encodeURIComponent(imei)}`,{method:"DELETE",...ahNoBody()});
+    await loadDevices();
+    await loadGpsVehicleAssignments();
+  }catch(e){}
+}
+function editDevice(imei,serial,notes){
+  document.getElementById("edit-modal-title").textContent=`Edit GPS Device — ${imei}`;
+  document.getElementById("edit-serial").value=serial;
+  document.getElementById("edit-notes").value=notes;
+  document.getElementById("edit-notes").style.display="";
+  document.getElementById("edit-notes-lbl").style.display="";
+  document.getElementById("edit-label").style.display="none";
+  document.getElementById("edit-label-inp").style.display="none";
+  document.getElementById("edit-save-btn").onclick=async()=>{
+    const sn=document.getElementById("edit-serial").value.trim();
+    const nt=document.getElementById("edit-notes").value.trim();
+    const r=await fetch(`${API}/admin/devices/${encodeURIComponent(imei)}`,{method:"PATCH",...ah(),body:JSON.stringify({serial_number:sn,notes:nt})});
+    if(r.ok){closeEditModal();await loadDevices();}
+    else alert("Save failed: "+(await r.text()));
+  };
+  document.getElementById("edit-modal-overlay").style.display="flex";
+}
+function editBleSensor(id,serial,label){
+  document.getElementById("edit-modal-title").textContent=`Edit EYE Sensor #${id}`;
+  document.getElementById("edit-serial").value=serial;
+  document.getElementById("edit-notes").style.display="none";
+  document.getElementById("edit-notes-lbl").style.display="none";
+  document.getElementById("edit-label").style.display="";
+  document.getElementById("edit-label-inp").style.display="";
+  document.getElementById("edit-label-inp").value=label;
+  document.getElementById("edit-save-btn").onclick=async()=>{
+    const sn=document.getElementById("edit-serial").value.trim();
+    const lb=document.getElementById("edit-label-inp").value.trim();
+    const r=await fetch(`${API}/admin/ble_sensors/${id}`,{method:"PATCH",...ah(),body:JSON.stringify({serial_number:sn,label:lb})});
+    if(r.ok){closeEditModal();await loadBleSensors();}
+    else alert("Save failed: "+(await r.text()));
+  };
+  document.getElementById("edit-modal-overlay").style.display="flex";
+}
+function closeEditModal(){document.getElementById("edit-modal-overlay").style.display="none";}
+
+async function loadGpsVehicleAssignments(){
+  try{
+    const data=await fetch(`${API}/admin/gps_vehicle_assignments`,ahNoBody()).then(r=>r.json());
+    const tbody=document.getElementById("gva-tbody");
+    if(!tbody)return;
+    if(!data.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No active GPS vehicle assignments</td></tr>';return;}
+    tbody.innerHTML=data.map(a=>`<tr>
+      <td><code style="font-size:11px;background:#0d1117;padding:1px 5px;border-radius:3px;">${a.imei}</code></td>
+      <td style="font-weight:600;">${a.sensor_id||"—"}</td>
+      <td><span class="badge badge-blue">${a.client_id||"—"}</span></td>
+      <td><span class="badge badge-green">🚗 ${a.plate}</span></td>
+      <td style="font-size:11px;color:var(--mu);">${a.assigned_at?.slice(0,10)||"—"}</td>
+      <td><button class="sm danger" style="margin:0;" onclick="unassignGpsFromVehicle('${a.imei}')">Unassign</button></td>
+    </tr>`).join("");
+  }catch(e){}
+}
+
+async function assignGpsToVehicle(){
+  const imei=document.getElementById("gva-imei").value;
+  const plate=document.getElementById("gva-plate").value.trim().toUpperCase();
+  const st=document.getElementById("gva-st");
+  if(!imei||!plate){st.style.color="var(--red)";st.textContent="Select a device and enter a plate.";return;}
+  try{
+    const r=await fetch(`${API}/admin/gps_vehicle_assignments`,{method:"POST",...ah(),body:JSON.stringify({imei,plate})});
+    if(r.ok){
+      st.style.color="var(--green)";st.textContent=`✓ ${imei} assigned to ${plate}`;
+      document.getElementById("gva-plate").value="";
+      await loadDevices();
+      await loadGpsVehicleAssignments();
+    } else {
+      const d=await r.json().catch(()=>({}));
+      st.style.color="var(--red)";st.textContent=d.detail||"Failed.";
+    }
+  }catch(e){st.style.color="var(--red)";st.textContent="Error.";}
+}
+
+async function unassignGpsFromVehicle(imei){
+  if(!confirm(`Unassign GPS device ${imei} from its current vehicle?`))return;
+  try{
+    await fetch(`${API}/admin/gps_vehicle_assignments/${encodeURIComponent(imei)}`,{method:"DELETE",...ahNoBody()});
+    await loadDevices();
+    await loadGpsVehicleAssignments();
+  }catch(e){}
+}
+
+// ── ALMACÉN ────────────────────────────────────────────────────────────────────
+let _almGpsData=[], _almSensorData=[];
+
+async function loadAlmacen(){
+  try{
+    const [devices, gvaActive, sensors, clients] = await Promise.all([
+      fetch(`${API}/admin/devices`, ahNoBody()).then(r=>r.json()),
+      fetch(`${API}/admin/gps_vehicle_assignments`, ahNoBody()).then(r=>r.json()).catch(()=>[]),
+      fetch(`${API}/admin/ble_sensors`, ahNoBody()).then(r=>r.json()).catch(()=>[]),
+      fetch(`${API}/admin/clients`, ahNoBody()).then(r=>r.json())
+    ]);
+    _almGpsData=devices.map(d=>{
+      const va=gvaActive.find(g=>g.imei===d.imei);
+      return{...d, plate:va?.plate||"", plate_assigned_at:va?.assigned_at||null};
+    });
+    _almSensorData=sensors;
+    // Populate client filter
+    const filterSel=document.getElementById("alm-filter-client");
+    const existing=new Set([...filterSel.options].map(o=>o.value));
+    for(const c of (clients.clients||clients)){
+      const cid=c.client_id||c;
+      if(!existing.has(cid)){const opt=document.createElement("option");opt.value=cid;opt.textContent=cid;filterSel.appendChild(opt);}
+    }
+    // Populate quick-assign client dropdowns
+    const qaCl=document.getElementById("alm-qa-client");
+    qaCl.innerHTML='<option value="">— unassign from client —</option>'+
+      (clients.clients||clients).map(c=>`<option value="${c.client_id||c}">${c.client_id||c}</option>`).join("");
+    renderAlmacen();
+  }catch(e){console.error("loadAlmacen",e);}
+}
+
+function renderAlmacen(){
+  const filterClient=document.getElementById("alm-filter-client").value;
+  const now=new Date();
+  const filteredGps=_almGpsData.filter(d=>!filterClient||d.client_id===filterClient);
+  const assigned=filteredGps.filter(d=>d.client_id).length;
+  const inVehicle=filteredGps.filter(d=>d.plate).length;
+  const free=filteredGps.filter(d=>!d.client_id).length;
+  document.getElementById("alm-gps-total").textContent=filteredGps.length;
+  document.getElementById("alm-gps-assigned").textContent=assigned;
+  document.getElementById("alm-gps-vehicle").textContent=inVehicle;
+  document.getElementById("alm-gps-free").textContent=free;
+  document.getElementById("alm-sensor-total").textContent=_almSensorData.length;
+  document.getElementById("alm-sensor-assigned").textContent=_almSensorData.filter(s=>s.client_id).length;
+
+  const gpsTbody=document.getElementById("alm-gps-tbody");
+  if(!filteredGps.length){gpsTbody.innerHTML='<tr><td colspan="8" class="empty">No GPS devices</td></tr>';}
+  else{
+    gpsTbody.innerHTML=filteredGps.map(d=>{
+      const lastMins=d.last_seen?Math.round((now-new Date(d.last_seen+"Z"))/60000):null;
+      const lastCls=lastMins==null?"badge-mu":lastMins<10?"badge-green":lastMins<60?"badge-yellow":"badge-red";
+      const lastLabel=lastMins!=null?lastMins+"m ago":"Never";
+      return`<tr>
+        <td><code style="font-size:11px;background:#0d1117;padding:1px 5px;border-radius:3px;">${d.imei}</code></td>
+        <td style="font-weight:600;">${d.sensor_id}</td>
+        <td>${d.client_id?`<span class="badge badge-blue" style="cursor:pointer;" onclick="openClientProfile('${d.client_id}')">${d.client_id}</span>`:'<span style="color:var(--red);font-size:11px;font-weight:600;">⚠ Unassigned</span>'}</td>
+        <td>${d.plate?`<span class="badge badge-green">🚗 ${d.plate}</span>`:'<span style="color:var(--mu);font-size:11px;">—</span>'}</td>
+        <td><span class="badge ${lastCls}">${lastLabel}</span></td>
+        <td style="font-size:11px;">${d.battery_level!=null?d.battery_level+"%":"—"}</td>
+        <td style="font-size:11px;color:var(--mu);">${d.notes||"—"}</td>
+        <td><button class="sm" style="margin:0;background:var(--acc);color:#0d1117;" onclick="openAlmacenForm('${d.imei}','${d.sensor_id}','${d.client_id||""}')">✏ Assign</button></td>
+      </tr>`;
+    }).join("");
+  }
+
+  const sensTbody=document.getElementById("alm-sensor-tbody");
+  const filteredSens=_almSensorData.filter(s=>!filterClient||s.client_id===filterClient);
+  if(!filteredSens.length){sensTbody.innerHTML='<tr><td colspan="7" class="empty">No EYE Sensors registered</td></tr>';}
+  else{
+    sensTbody.innerHTML=filteredSens.map(s=>{
+      const lastMins=s.last_seen?Math.round((now-new Date(s.last_seen+"Z"))/60000):null;
+      const lastCls=lastMins==null?"badge-mu":lastMins<10?"badge-green":lastMins<60?"badge-yellow":"badge-red";
+      return`<tr>
+        <td><code style="font-size:11px;background:#0d1117;padding:1px 5px;border-radius:3px;">${s.mac_address}</code></td>
+        <td style="font-weight:600;">${s.label||"—"}</td>
+        <td>${s.client_id?`<span class="badge badge-blue" style="cursor:pointer;" onclick="openClientProfile('${s.client_id}')">${s.client_id}</span>`:'<span style="color:var(--red);font-size:11px;font-weight:600;">⚠ Unassigned</span>'}</td>
+        <td style="font-size:11px;">${s.current_device_imei?`<code style="font-size:10px;background:#0d1117;padding:1px 4px;border-radius:3px;">${s.current_device_imei}</code>`:'<span style="color:var(--mu);">—</span>'}</td>
+        <td><span class="badge ${lastCls}">${lastMins!=null?lastMins+"m ago":"Never"}</span></td>
+        <td style="font-size:11px;">${s.battery_level!=null?s.battery_level+"%":"—"}</td>
+        <td><button class="sm sec" style="margin:0;" onclick="showPage('sensors')">Manage</button></td>
+      </tr>`;
+    }).join("");
+  }
+}
+
+function openAlmacenForm(imei,sensorId,currentClient){
+  document.getElementById("alm-quick-assign").style.display="block";
+  document.getElementById("alm-qa-imei").value=imei;
+  document.getElementById("alm-qa-imei-label").textContent=`${imei} (${sensorId})`;
+  document.getElementById("alm-qa-client").value=currentClient||"";
+  document.getElementById("alm-qa-plate").value="";
+  document.getElementById("alm-qa-st").textContent="";
+  document.getElementById("alm-quick-assign").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+function closeAlmacenForm(){document.getElementById("alm-quick-assign").style.display="none";}
+
+async function doAlmacenAssign(){
+  const imei=document.getElementById("alm-qa-imei").value;
+  const clientId=document.getElementById("alm-qa-client").value;
+  const plate=document.getElementById("alm-qa-plate").value.trim().toUpperCase();
+  const st=document.getElementById("alm-qa-st");
+  st.textContent="Saving…";st.style.color="var(--mu)";
+  try{
+    // 1. Re-register device with new client (upsert)
+    const dev=_almGpsData.find(d=>d.imei===imei);
+    if(!dev){st.style.color="var(--red)";st.textContent="Device not found.";return;}
+    if(clientId){
+      await fetch(`${API}/admin/register_device`,{method:"POST",...ah(),
+        body:JSON.stringify({imei,sensor_id:dev.sensor_id,client_id:clientId,notes:dev.notes||""})});
+    }
+    // 2. Assign to vehicle plate if provided
+    if(plate){
+      if(!clientId){st.style.color="var(--red)";st.textContent="Select a client before assigning a plate.";return;}
+      await fetch(`${API}/vehicle_assignments/${encodeURIComponent(clientId)}`,{method:"POST",...ah(),body:JSON.stringify({imei,plate,eye_mac:"",driver_name:"",notes:""})});
+    } else {
+      // Unassign from vehicle — find the active assignment id first
+      const active=await fetch(`${API}/admin/gps_vehicle_assignments`,ahNoBody()).then(r=>r.json()).catch(()=>[]);
+      const asgn=active.find(a=>a.imei===imei);
+      if(asgn) await fetch(`${API}/admin/gps_vehicle_assignments/${encodeURIComponent(imei)}`,{method:"DELETE",...ahNoBody()});
+    }
+    st.style.color="var(--green)";st.textContent="✓ Saved";
+    closeAlmacenForm();
+    await loadAlmacen();
+    await loadDevices();
+    await loadGpsVehicleAssignments();
+  }catch(e){st.style.color="var(--red)";st.textContent="Error: "+e.message;}
+}
+
+// ── SIMULATOR ──────────────────────────────────────────────────────────────────
+const sim={running:false,timer:null,lat:36.8340,lng:-2.4637,speed:0,heading:45,targetSpeed:40,count:0,mode:"both"};
+
+function setSimMode(mode){
+  sim.mode=mode;
+  for(const m of ["both","gps","temp"]){
+    const b=document.getElementById("sm-"+m);
+    if(b){
+      b.classList.toggle("sec",m!==mode);
+    }
+  }
+}
+
+async function onSimClientChange(){
+  const cid=document.getElementById("vs-client").value.trim();
+  const inv=document.getElementById("vs-inventory");
+  const gpsSel=document.getElementById("vs-gps");
+  const eyeSel=document.getElementById("vs-eye");
+  if(!cid){
+    inv.innerHTML="Select a client to see registered devices &amp; vehicles…";
+    gpsSel.innerHTML=`<option value="">— pick / register first —</option>`;
+    eyeSel.innerHTML=`<option value="">— pick / register first —</option>`;
+    return;
+  }
+  inv.innerHTML="<i>Loading…</i>";
+  try{
+    // Use admin endpoints — admin key is in ah()
+    const [gps,eyes,va]=await Promise.all([
+      fetch(`${API}/admin/devices`,ahNoBody()).then(r=>r.ok?r.json():[]).then(arr=>arr.filter(d=>d.client_id===cid)),
+      fetch(`${API}/admin/ble_sensors`,ahNoBody()).then(r=>r.ok?r.json():[]).then(arr=>arr.filter(s=>s.client_id===cid)),
+      fetch(`${API}/admin/gps_vehicle_assignments`,ahNoBody()).then(r=>r.ok?r.json():[])
+    ]);
+    // Populate selectors
+    gpsSel.innerHTML=gps.length
+      ?gps.map(d=>`<option value="${d.sensor_id||d.imei}|${d.imei}">${d.sensor_id||"FMB"} · IMEI ${d.imei}${d.serial_number?` · SN ${d.serial_number}`:""}</option>`).join("")
+      :`<option value="">— no GPS devices registered —</option>`;
+    eyeSel.innerHTML=`<option value="">— none —</option>`+
+      eyes.map(s=>`<option value="${s.mac_address}">${s.label||s.mac_address}${s.serial_number?` · SN ${s.serial_number}`:""}</option>`).join("");
+    // Inventory summary
+    const vehicles=va.filter(v=>gps.some(g=>g.imei===v.imei));
+    let html="";
+    html+=`<div><b>${gps.length}</b> GPS device${gps.length!==1?"s":""}</div>`;
+    html+=`<div><b>${eyes.length}</b> EYE sensor${eyes.length!==1?"s":""}</div>`;
+    if(vehicles.length){
+      html+=`<div style="margin-top:6px;font-size:11px;font-weight:700;color:var(--ax);text-transform:uppercase;letter-spacing:.5px;">Vehicles</div>`;
+      html+=vehicles.map(v=>`<div style="font-size:11px;">🚛 <b>${v.plate}</b> <span style="color:var(--mu);">· IMEI ${v.imei}</span></div>`).join("");
+    } else if(gps.length){
+      html+=`<div style="font-size:11px;color:var(--yellow);margin-top:6px;">⚠ No vehicle plates assigned yet.</div>`;
+    }
+    inv.innerHTML=html;
+  }catch(e){
+    inv.innerHTML=`<span style="color:var(--red);">Error loading inventory</span>`;
+  }
+}
+
+function applyPreset(){
+  const v=document.getElementById("vs-preset").value;
+  if(!v)return;
+  const [lat,lng]=v.split(",").map(Number);
+  document.getElementById("vs-lat").value=lat.toFixed(4);
+  document.getElementById("vs-lng").value=lng.toFixed(4);
+  sim.lat=lat;sim.lng=lng;
+}
+function headingLabel(deg){
+  return["N","NE","E","SE","S","SW","W","NW","N"][Math.round(deg/45)%8];
+}
+function simStep(){
+  const interval=parseFloat(document.getElementById("vs-interval").value)||3;
+  if(Math.random()<0.08)sim.targetSpeed=0;
+  else if(Math.random()<0.06)sim.targetSpeed=15+Math.random()*65;
+  sim.speed+=(sim.targetSpeed-sim.speed)*0.25;
+  if(sim.speed<0.3)sim.speed=0;
+  if(sim.speed>2&&Math.random()<0.18){
+    sim.heading+=(Math.random()-0.5)*50;sim.heading=(sim.heading+360)%360;
+  }
+  const distM=sim.speed*(1000/3600)*interval;
+  const hRad=sim.heading*Math.PI/180;
+  sim.lat+=distM*Math.cos(hRad)/111320;
+  sim.lng+=distM*Math.sin(hRad)/(111320*Math.cos(sim.lat*Math.PI/180));
+  document.getElementById("ss-speed").textContent=sim.speed.toFixed(1);
+  document.getElementById("ss-heading").textContent=headingLabel(sim.heading);
+  document.getElementById("ss-lat").textContent=sim.lat.toFixed(5);
+  document.getElementById("ss-lng").textContent=sim.lng.toFixed(5);
+  document.getElementById("ss-count").textContent=++sim.count;
+  sendSingleReading(true);
+}
+async function sendSingleReading(fromSim=false){
+  const cid=document.getElementById("vs-client").value.trim();
+  const manualSid=document.getElementById("vs-sid").value.trim();
+  const gpsVal=document.getElementById("vs-gps").value;       // "sensor_id|imei"
+  const eyeMac=document.getElementById("vs-eye").value;       // MAC
+  const temp=parseFloat(document.getElementById("vs-sldr").value);
+  const bat=parseInt(document.getElementById("vs-bat").value);
+  const log=document.getElementById("sim-log");
+  if(!cid){log.style.color="var(--red)";log.textContent="Select a client first.";return;}
+  const lat=fromSim?sim.lat:parseFloat(document.getElementById("vs-lat").value)||null;
+  const lng=fromSim?sim.lng:parseFloat(document.getElementById("vs-lng").value)||null;
+  const gpsSid=gpsVal?gpsVal.split("|")[0]:"";
+  const targets=[];  // [{sid, temp?, lat?, lng?, label}]
+  if(manualSid){
+    // Manual override: always send everything to this one sensor
+    targets.push({sid:manualSid,temp,bat,lat,lng,label:`${manualSid}`});
+  }else{
+    const mode=sim.mode||"both";
+    if(mode==="gps"||mode==="both"){
+      const sid=gpsSid||"sensor-A";
+      // GPS reading: only lat/lng/battery, no temp
+      targets.push({sid,bat,lat,lng,label:`📟 ${sid}`});
+    }
+    if(mode==="temp"||mode==="both"){
+      const sid=eyeMac||gpsSid||"sensor-A";
+      targets.push({sid,temp,bat,label:`🌡️ ${sid}`});
+    }
+  }
+  if(!targets.length){
+    log.style.color="var(--red)";log.textContent="Pick a GPS device or EYE sensor (or enter a manual ID).";return;
+  }
+  try{
+    const results=[];
+    for(const tgt of targets){
+      const body={sensor_id:tgt.sid,client_id:cid,battery_level:tgt.bat};
+      if(tgt.temp!=null) body.temperature=tgt.temp;
+      if(tgt.lat!=null&&tgt.lng!=null){body.lat=tgt.lat;body.lng=tgt.lng;}
+      const r=await fetch(`${API}/reading`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const d=await r.json().catch(()=>({}));
+      results.push(`${tgt.label}${tgt.temp!=null?" "+tgt.temp.toFixed(1)+"°C":""}${d.status?" ["+d.status+"]":""}`);
+    }
+    const spd=fromSim?` · ${sim.speed.toFixed(1)} km/h`:"";
+    log.style.color="var(--green)";
+    log.textContent=`✓ ${results.join(" + ")}${spd}`;
+  }catch(e){
+    if(sim.running)stopAll();
+    log.style.color="var(--red)";log.textContent="❌ Cannot reach backend.";
+  }
+}
+function toggleMovement(){
+  if(sim.running){stopAll();return;}
+  sim.lat=parseFloat(document.getElementById("vs-lat").value)||sim.lat;
+  sim.lng=parseFloat(document.getElementById("vs-lng").value)||sim.lng;
+  sim.speed=0;sim.count=0;sim.running=true;
+  const interval=Math.max(2,parseFloat(document.getElementById("vs-interval").value)||3)*1000;
+  document.getElementById("vs-move-btn").textContent="⏹ Stop Movement";
+  document.getElementById("vs-move-btn").className="danger";
+  document.getElementById("vs-stop-btn").style.display="";
+  simStep();sim.timer=setInterval(simStep,interval);
+}
+function stopAll(){
+  if(sim.timer){clearInterval(sim.timer);sim.timer=null;}
+  sim.running=false;
+  document.getElementById("vs-move-btn").textContent="▶ Start Movement";
+  document.getElementById("vs-move-btn").className="green";
+  document.getElementById("vs-stop-btn").style.display="none";
+}
+
+// ── RESET PASSWORD ─────────────────────────────────────────────────────────────
+async function promptResetPassword(clientId){
+  const pw=prompt(`New password for client "${clientId}" (min 4 chars):`);
+  if(!pw||pw.length<4){alert("Password too short.");return;}
+  try{
+    const r=await fetch(`${API}/admin/clients/${encodeURIComponent(clientId)}/reset_password`,
+      {method:"POST",...ah(),body:JSON.stringify({new_password:pw})});
+    if(r.ok){alert(`✓ Password for "${clientId}" reset successfully.`);}
+    else{const e=await r.json().catch(()=>({}));alert("Failed: "+(e.detail||"unknown error"));}
+  }catch(e){alert("Error: "+e.message);}
+}
+
+// ── BLE SENSORS ────────────────────────────────────────────────────────────────
+let _bleSensors=[];
+async function loadBleSensors(){
+  try{
+    const [sensors, hist]=await Promise.all([
+      fetch(`${API}/admin/ble_sensors`,ahNoBody()).then(r=>r.json()),
+      fetch(`${API}/admin/ble_sensor_assignments`,ahNoBody()).then(r=>r.json()).catch(()=>[])
+    ]);
+    _bleSensors=sensors;
+    renderBleSensors(_bleSensors);
+    const rasSensor=document.getElementById("ras-sensor");
+    if(rasSensor){
+      rasSensor.innerHTML='<option value="">— select EYE Sensor —</option>'+
+        sensors.map(s=>`<option value="${s.id}">${s.mac_address}${s.label?" ("+s.label+")":""} · ${s.client_id}${s.current_device_imei?" → "+s.current_device_imei:""}</option>`).join("");
+    }
+    const htb=document.getElementById("ble-hist-tbody");
+    if(htb){
+      if(!hist.length)htb.innerHTML='<tr><td colspan="6" class="empty">No assignments yet</td></tr>';
+      else htb.innerHTML=hist.map(h=>`<tr>
+        <td><code style="font-size:10px;">${h.mac_address}</code></td>
+        <td style="font-size:12px;">${h.label||"—"}</td>
+        <td><span class="badge badge-blue">${h.client_id}</span></td>
+        <td style="font-size:11px;"><code style="font-size:10px;">${h.device_imei}</code></td>
+        <td style="font-size:11px;color:var(--mu);">${h.assigned_at?.slice(0,16)||"—"}</td>
+        <td style="font-size:11px;color:var(--mu);">${h.unassigned_at?.slice(0,16)||"<span style='color:var(--green);'>Active</span>"}</td>
+      </tr>`).join("");
+    }
+  }catch(e){}
+}
+function renderBleSensors(data){
+  const tbody=document.getElementById("ble-tbody");
+  if(!tbody)return;
+  const now=new Date();
+  if(!data.length){tbody.innerHTML='<tr><td colspan="9" class="empty">No EYE Sensors registered</td></tr>';return;}
+  tbody.innerHTML=data.map(s=>{
+    const lastMins=s.last_seen?Math.round((now-new Date(s.last_seen+"Z"))/60000):null;
+    const cls=lastMins==null?"badge-mu":lastMins<10?"badge-green":lastMins<60?"badge-yellow":"badge-red";
+    return`<tr>
+      <td style="font-weight:600;">${s.id}</td>
+      <td><code style="font-size:11px;background:#0d1117;padding:1px 5px;border-radius:3px;">${s.mac_address}</code></td>
+      <td style="font-size:11px;color:var(--mu);">${s.serial_number||"—"}</td>
+      <td style="font-size:12px;">${s.label||"—"}</td>
+      <td><span class="badge badge-blue">${s.client_id}</span></td>
+      <td style="font-size:11px;">${s.current_device_imei?`<code style="font-size:10px;background:#0d1117;padding:1px 4px;border-radius:3px;">${s.current_device_imei}</code>`:'<span style="color:var(--mu);">unassigned</span>'}</td>
+      <td style="font-size:11px;">${s.battery_level!=null?s.battery_level+"%":"—"}</td>
+      <td><span class="badge ${cls}">${lastMins!=null?lastMins+"m ago":"Never"}</span></td>
+      <td style="white-space:nowrap;"><button class="ico" style="margin-right:4px;" onclick="editBleSensor(${s.id},'${(s.serial_number||'').replace(/'/g,"\\'")}','${(s.label||'').replace(/'/g,"\\'")}')">✏️</button><button class="ico" onclick="deleteBleSensor(${s.id})" title="Remove">✕</button></td>
+    </tr>`;
+  }).join("");
+}
+function filterBleSensors(){
+  const q=document.getElementById("ble-search").value.trim().toLowerCase();
+  if(!q){renderBleSensors(_bleSensors);return;}
+  renderBleSensors(_bleSensors.filter(s=>(s.mac_address||"").toLowerCase().includes(q)||(s.serial_number||"").toLowerCase().includes(q)||(s.label||"").toLowerCase().includes(q)||(s.client_id||"").toLowerCase().includes(q)||(s.current_device_imei||"").toLowerCase().includes(q)));
+}
+async function deleteBleSensor(id){
+  if(!confirm("Remove this EYE Sensor?"))return;
+  try{
+    await fetch(`${API}/admin/ble_sensors/${id}`,{method:"DELETE",...ahNoBody()});
+    await loadBleSensors();
+  }catch(e){}
+}
+
+// ── VEHICLES ───────────────────────────────────────────────────────────────────
+async function loadVehicles(){
+  const cid=document.getElementById("veh-filter-client")?.value||"";
+  try{
+    const data=await fetch(`${API}/admin/vehicles?client_id=${encodeURIComponent(cid)}`,ahNoBody()).then(r=>r.json());
+    const tbody=document.getElementById("veh-tbody");
+    if(!data.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No vehicles registered</td></tr>';return;}
+    tbody.innerHTML=data.map(v=>`<tr>
+      <td><span class="badge badge-green">🚗 ${v.plate}</span></td>
+      <td style="font-size:12px;">${v.label||"—"}</td>
+      <td><span class="badge badge-blue">${v.client_id}</span></td>
+      <td style="font-size:11px;color:var(--mu);">${v.created_at?.slice(0,10)||"—"}</td>
+      <td><button class="ico" onclick="deleteVehicle(${v.id})" title="Remove">✕</button></td>
+    </tr>`).join("");
+  }catch(e){}
+}
+async function registerVehicle(){
+  const plate=document.getElementById("veh-plate").value.trim().toUpperCase();
+  const cid=document.getElementById("veh-cid").value;
+  const label=document.getElementById("veh-label").value.trim();
+  const st=document.getElementById("veh-st");
+  if(!plate||!cid){st.style.color="var(--red)";st.textContent="Plate and Client required.";return;}
+  try{
+    const r=await fetch(`${API}/admin/vehicles`,{method:"POST",...ah(),body:JSON.stringify({plate,client_id:cid,label})});
+    if(r.ok){
+      st.style.color="var(--green)";st.textContent=`✓ Vehicle ${plate} registered.`;
+      ["veh-plate","veh-label"].forEach(k=>document.getElementById(k).value="");
+      await loadVehicles();
+    } else {const e=await r.json().catch(()=>({}));st.style.color="var(--red)";st.textContent=e.detail||"Failed.";}
+  }catch(e){st.style.color="var(--red)";st.textContent="Error.";}
+}
+async function deleteVehicle(id){
+  if(!confirm("Remove this vehicle?"))return;
+  try{await fetch(`${API}/admin/vehicles/${id}`,{method:"DELETE",...ahNoBody()});await loadVehicles();}catch(e){}
+}
+
+// ── REASSIGN ───────────────────────────────────────────────────────────────────
+function prepareReassign(){
+  const sid=document.getElementById("ras-sensor").value;
+  const imei=document.getElementById("ras-device").value;
+  const st=document.getElementById("ras-st");
+  const box=document.getElementById("ras-confirm-box");
+  if(!sid||!imei){st.style.color="var(--red)";st.textContent="Select a BLE sensor and a target GPS device.";return;}
+  const sensor=_bleSensors.find(s=>String(s.id)===String(sid));
+  const confirmText=`Reassign <b>${sensor?.mac_address||sid}</b>${sensor?.label?" ("+sensor.label+")":""}<br>
+    From: <b>${sensor?.current_device_imei||"(unassigned)"}</b><br>
+    To: <b>${imei}</b><br><br>
+    ${sensor?.current_device_imei?"The current GPS device whitelist will also be updated via RMS.":""}`;
+  document.getElementById("ras-confirm-text").innerHTML=confirmText;
+  box.style.display="block";
+  st.textContent="";
+}
+function cancelReassign(){document.getElementById("ras-confirm-box").style.display="none";}
+async function doReassign(){
+  const sid=parseInt(document.getElementById("ras-sensor").value);
+  const imei=document.getElementById("ras-device").value;
+  const st=document.getElementById("ras-st");
+  const box=document.getElementById("ras-confirm-box");
+  st.style.color="var(--mu)";st.textContent="Reassigning…";
+  box.style.display="none";
+  try{
+    const r=await fetch(`${API}/admin/reassign`,{method:"POST",...ah(),body:JSON.stringify({ble_sensor_id:sid,new_device_imei:imei})});
+    const data=await r.json();
+    if(r.ok){
+      const rmsStatus=data.rms_new_device?.ok?"✓ RMS push succeeded":
+        data.rms_new_device?.skipped?"(RMS not configured)":"⚠ RMS push failed";
+      st.style.color="var(--green)";st.textContent=`✓ Reassigned. ${rmsStatus}`;
+      await loadBleSensors();
+      await loadReassignHistory();
+    } else {
+      st.style.color="var(--red)";st.textContent=data.detail||"Failed.";
+    }
+  }catch(e){st.style.color="var(--red)";st.textContent="Error: "+e.message;}
+}
+async function loadReassignHistory(){
+  try{
+    const hist=await fetch(`${API}/admin/ble_sensor_assignments`,ahNoBody()).then(r=>r.json());
+    const tbody=document.getElementById("ras-hist-tbody");
+    if(!tbody)return;
+    // Build pairs from closed rows (have unassigned_at)
+    const rows=hist.filter(h=>h.unassigned_at).slice(0,30);
+    if(!rows.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No reassignments yet</td></tr>';return;}
+    tbody.innerHTML=rows.map(h=>`<tr>
+      <td><code style="font-size:10px;">${h.mac_address}</code></td>
+      <td style="font-size:12px;">${h.label||"—"}</td>
+      <td style="font-size:11px;"><code style="font-size:10px;">${h.device_imei}</code></td>
+      <td style="font-size:11px;color:var(--mu);">—</td>
+      <td><span class="badge badge-blue">${h.client_id}</span></td>
+      <td style="font-size:11px;color:var(--mu);">${h.unassigned_at?.slice(0,16)||"—"}</td>
+    </tr>`).join("");
+  }catch(e){}
+}
+
+// ── SHOW PAGE (updated) ─────────────────────────────────────────────────────────
+
+// ── AUTO-LOGIN ─────────────────────────────────────────────────────────────────
+window.addEventListener("load",()=>{
+  const stored=localStorage.getItem("cc_admin_key");
+  if(stored){document.getElementById("ak").value=stored;adminLogin();}
+});
+</script>
+<!-- SIM Assign Modal -->
+<div id="sim-assign-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:24px;width:400px;max-width:92vw;">
+    <h3 id="sim-assign-title" style="margin:0 0 16px;font-size:14px;color:#e2e8f0;"></h3>
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">GPS Device (FMB920)</label>
+    <select id="sim-assign-select" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2d3748;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:13px;margin-bottom:12px;"></select>
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Notes (optional)</label>
+    <input id="sim-assign-notes" type="text" placeholder="e.g. Replaced broken SIM" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2d3748;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:13px;margin-bottom:4px;"/>
+    <div id="sim-assign-st" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeSIMAssignModal()" style="background:#2d3748;border:none;border-radius:6px;color:#94a3b8;padding:7px 16px;cursor:pointer;font-size:13px;">Cancel</button>
+      <button id="sim-assign-save" style="background:#4f8ef7;border:none;border-radius:6px;color:#fff;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;">Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Serial/Label Modal -->
+<div id="edit-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:24px;width:360px;max-width:90vw;">
+    <h3 id="edit-modal-title" style="margin:0 0 16px;font-size:14px;color:#e2e8f0;"></h3>
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Serial Number</label>
+    <input id="edit-serial" type="text" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2d3748;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:13px;margin-bottom:12px;"/>
+    <label id="edit-label" style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Label</label>
+    <input id="edit-label-inp" type="text" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2d3748;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:13px;margin-bottom:12px;"/>
+    <label id="edit-notes-lbl" style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Notes</label>
+    <input id="edit-notes" type="text" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2d3748;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:13px;margin-bottom:16px;"/>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closeEditModal()" style="background:#2d3748;border:none;border-radius:6px;color:#94a3b8;padding:7px 16px;cursor:pointer;font-size:13px;">Cancel</button>
+      <button id="edit-save-btn" style="background:#4f8ef7;border:none;border-radius:6px;color:#fff;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:600;">Save</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

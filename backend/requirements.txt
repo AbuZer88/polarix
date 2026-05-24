@@ -1,0 +1,21 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+python-dotenv
+twilio
+requests
+pandas
+python-multipart
+# Security
+bcrypt
+python-jose[cryptography]
+passlib
+slowapi
+# Database (PostgreSQL support)
+psycopg2-binary
+# Charts for PDF export
+matplotlib
+# Payments
+stripe
+# Error tracking (optional — only loaded when SENTRY_DSN env var is set)
+sentry-sdk[fastapi]
