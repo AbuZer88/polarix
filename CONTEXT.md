@@ -85,6 +85,15 @@ polarix/
 - `SMTP_USER`, `SMTP_PASS` — for email alerts
 - `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_FROM` — for WhatsApp/SMS alerts
 
+### Staging usage policy (decided 2026-05-24)
+
+Staging is **fully built and reserved for later** — activate it when you have real paying clients on production and need a safe place to test changes without disrupting them. While you're still in pre-launch / pilot mode:
+
+- **Workflow now:** push to `main` → Railway auto-deploys production → test there directly
+- **Workflow later (once you have clients):** push to `staging` branch → test on staging URL → merge to `main` → production deploys
+
+The staging environment on Railway will sit idle (costs nothing on free tier) until you switch to the 2-branch workflow. All infrastructure is ready: separate DB, separate secrets, separate URL, orange warning banner. No additional setup needed.
+
 **Staging banner:** Both dashboards call `GET /health` on load. When `ENVIRONMENT=staging` the response triggers a fixed orange bar: *"⚠ STAGING ENVIRONMENT — data here is for testing only"*.
 
 **`.env.staging` placeholders to fill before deploying staging:**
