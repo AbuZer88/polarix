@@ -63,12 +63,27 @@ polarix/
 
 ## Environments
 
-| Environment | Command | Port | Database | Banner |
+| Environment | Command | URL | Database | Banner |
 |---|---|---|---|---|
-| Local dev | `make dev` or `start.bat` | 8000 / 8080 | `canary.db` | None |
-| Local staging sim | `make staging` | 8001 | `canary_staging.db` | ⚠ Orange banner |
-| Railway staging | `make deploy-staging` | HTTPS | `canary_staging.db` (SQLite) | ⚠ Orange banner |
-| Railway production | `make deploy-prod` (manual confirm) | HTTPS | PostgreSQL | None |
+| Local dev | `make dev` or `start.bat` | http://localhost:8080 | `canary.db` | None |
+| Local staging sim | `make staging` | http://localhost:8001 | `canary_staging.db` | ⚠ Orange banner |
+| Railway staging | `make deploy-staging` | https://polarix-staging.up.railway.app | `canary_staging.db` (SQLite) | ⚠ Orange banner |
+| Railway production | `make deploy-prod` | https://polarix-production.up.railway.app | SQLite (upgrade to Postgres later) | None |
+
+**GitHub repo:** https://github.com/AbuZer88/polarix (private)
+**Railway project:** https://railway.com/project/ddbc68d0-7ee8-42d3-8d0e-37ed6556be2f
+
+**Production credentials (save these securely):**
+- Admin key: `polarix-admin-2026-prod`
+- Teltonika HTTP token: `23aa455fbc09749b68971b9d10dfbb57`
+
+**Staging credentials:**
+- Admin key: `polarix-admin-2026-staging`
+- Teltonika HTTP token: `f47b254ae23843bb75bd98e7983c4473`
+
+**Still needed on Railway (add via Variables tab):**
+- `SMTP_USER`, `SMTP_PASS` — for email alerts
+- `TWILIO_SID`, `TWILIO_TOKEN`, `TWILIO_FROM` — for WhatsApp/SMS alerts
 
 **Staging banner:** Both dashboards call `GET /health` on load. When `ENVIRONMENT=staging` the response triggers a fixed orange bar: *"⚠ STAGING ENVIRONMENT — data here is for testing only"*.
 
@@ -259,6 +274,12 @@ verify on Railway staging URL → make deploy-prod (requires manual confirm)
 | 15 | Admin Panel CRM Redesign (client profile pages) | Large |
 | 16 | Vehicle/Sensor Assignment Panel Redesign | Medium |
 | 17 | **SMTP Email — add credentials to .env** (5 min) | Trivial |
+
+---
+
+## Critical Bugs Fixed (2026-05-24)
+
+- **index.html API URL** was hardcoded to `http://localhost:8080` — fixed to dynamic (`window.location.origin` in production, localhost fallback in dev). This was a production blocker — the dashboard would never have connected to Railway.
 
 ---
 
