@@ -1,5 +1,5 @@
 # Polarix — Full Project Context
-*Last updated: 2026-05-24 (session 3) | For use in Claude Code sessions to resume work without re-reading the whole codebase.*
+*Last updated: 2026-05-24 (session 4) | For use in Claude Code sessions to resume work without re-reading the whole codebase.*
 
 ---
 
@@ -295,18 +295,56 @@ verify on Railway staging URL → make deploy-prod (requires manual confirm)
 
 ---
 
-## Known Good State (as of 2026-05-24 session 3)
+## Live-Testing Bugs Fixed (2026-05-24, session 4 — found testing client ALMERIA1)
+
+Five bugs found during real-device testing on production. Commit: `9fb8af6`.
+
+### Bug 1: Cross-client alert badge
+`#sbadge` showed sensor IDs from OTHER clients (e.g. "⚠ Sensor 89988888, Sensor 908130913"). Two root causes:
+1. `offCount` was declared as `const` inside `if(!_gpsDevsCache.length)` block but used outside — when a GPS device existed, this threw a `ReferenceError` caught silently by `loadFleetStatus`'s try/catch, so the badge never updated correctly from fleet polling.
+2. `enterApp()` did not clear `shData`/`_gpsDevsCache`/`_eyeSensCache`, so stale data from a previous client session could leak into the new login.
+
+**Fix:** Move `offCount`/`onCount` to function scope in `renderSensorStatusGrid`. Add state reset in `enterApp()`. Badge now uses `_prettyLabel()` for friendly names.
+
+### Bug 2+3: Serial numbers not displaying in client views
+Client dashboard showed "GPS-555555" and "Sonda" instead of the registered serial numbers. `_gpsDevsCache.serial_number` was empty (device registered before serial_number column migration, or DB reset on redeploy).
+
+**Fix:** `_buildMergedDevices`, `renderDeviceTiles`, `renderFleetTable` now fall back to `shData[sensor_id].serial_number` (populated by backend's `serial_map` lookup in `GET /sensor_health`). This gives a second independent source for the serial.
+
+### Bug 4: EYE sensor invisible on client dashboard
+EYE sensor (mac "888888", serial "SN 3001") assigned to ALMERIA1 appeared as "Sonda" placeholder — not linked to its GPS device in tiles.
+
+**Root cause:** `GET /ble_sensors/{client_id}` only joined `ble_sensor_assignments` for `device_imei`. When the admin creates a vehicle assignment (client Vehicles tab), it writes to `vehicle_assignments.eye_mac` — NOT to `ble_sensor_assignments`. So `device_imei` was always null for these sensors.
+
+**Fix (backend):** `/ble_sensors/{client_id}` now `COALESCE(bsa.device_imei, va.imei)` — joins `vehicle_assignments` as a fallback. EYE sensors assigned via the Vehicles tab now have `device_imei` populated and appear in tiles.
+
+### Bug 5: Speed alarm form UX
+Speed alarm form used the sensor/EYE dropdown instead of a GPS device dropdown. Also had no delay field.
+
+**Fix:**
+- Added `#ar-gps-sensor` dropdown (GPS devices only, populated from `_gpsDevsCache`)
+- Added `#ar-speed-delay` field (0 = immediate, same pattern as temperature delay)
+- `updateAlarmTypeUI()` toggles `#ar-sensor-wrap` (hidden for speed) vs `#ar-gps-wrap` (shown for speed)
+- `createAlarmRule()` reads from the correct selector per alarm type
+- `loadAlarmRules()` populates both dropdowns on load
+
+---
+
+## Known Good State (as of 2026-05-24 session 4)
 
 - All client-facing views show `serial_number` — no mac_address, no raw sensor_id
+- Serial fallback chain: `gps_devices.serial_number` → `sensor_health.serial_number` → `sensor_id`
 - Count label shows correct "X online · Y offline" (GPS devices only, not EYE)
 - Chart x-axis shows `dd/mm HH:MM` (date + time)
 - PDF report includes Matrícula column; sensor column shows serial not sensor_id
 - PDF date range: fixed — history tab report now uses chart's date selection, not map's
 - Speed alarms: DB columns, backend check, notifier, frontend UI all complete
+- Speed alarm form: GPS device dropdown + delay field (0 = immediate)
 - Alarm rules: support temperature + speed types, correct badge in list
 - Settings: accent color + sensor colors in Ajustes tab (moved from Profile modal)
 - BLE sensors: hidden from Settings tab (managed only via Vehicles tab)
 - Vehicles tab: professional vehicle cards (GPS serial, EYE serial, plate, status)
+- EYE sensors assigned via Vehicles tab now populate `device_imei` via vehicle_assignments fallback
 - Admin: ✏️ edit buttons on GPS + EYE tables for post-registration serial edits
 - Admin: SIM assign uses dropdown modal (not `prompt()`)
 - Admin: create-client form has min_temp + max_temp fields with defaults (2.0 / 8.0)
@@ -316,3 +354,4 @@ verify on Railway staging URL → make deploy-prod (requires manual confirm)
 - Alert history: uses `_prettyLabel()` for all entries; speed alerts show km/h + 🚗 badge
 - Mobile: bottom nav bar (5 tabs), full-screen modals, 44px touch targets, stacked forms
 - DEPLOY.md: Railway pause/resume instructions added
+- Railway: both production and staging can be suspended to save costs (Settings → Danger Zone → Suspend)
