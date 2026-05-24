@@ -276,11 +276,18 @@ async def _handle_client(reader: asyncio.StreamReader,
 # ── Public entry point ────────────────────────────────────────────────────────
 
 async def run_tcp_server(engine) -> None:
-    """Start Teltonika TCP server. Designed to run as an asyncio background task."""
-    server = await asyncio.start_server(
-        lambda r, w: _handle_client(r, w, engine),
-        "0.0.0.0", TCP_PORT
-    )
+    """Start Teltonika TCP server. Designed to run as an asyncio background task.
+    On hosts that don't allow raw TCP (Railway, most PaaS), this skips silently —
+    devices should be configured for HTTP mode and POST to /teltonika/http instead."""
+    try:
+        server = await asyncio.start_server(
+            lambda r, w: _handle_client(r, w, engine),
+            "0.0.0.0", TCP_PORT
+        )
+    except (OSError, PermissionError) as e:
+        print(f"[Teltonika] TCP server disabled (port {TCP_PORT} unavailable: {e}). "
+              f"Use HTTP mode: POST to /teltonika/http")
+        return
     addrs = ", ".join(str(s.getsockname()) for s in server.sockets)
     logger.info("[TCP] Teltonika server listening on %s", addrs)
     print(f"[Teltonika] TCP server listening on port {TCP_PORT}")
