@@ -281,8 +281,8 @@
           <label>Client ID</label><input id="nc-id" type="text" placeholder="e.g. almeria_fleet"/>
           <label>Password</label><input id="nc-pw" type="password" placeholder="Min 4 chars"/>
           <div style="display:flex;gap:10px;margin-top:4px;">
-            <div style="flex:1;"><label>Temp. mínima (°C)</label><input id="nc-min" type="number" step="0.1" value="2.0" style="width:100%;"/></div>
-            <div style="flex:1;"><label>Temp. máxima (°C)</label><input id="nc-max" type="number" step="0.1" value="8.0" style="width:100%;"/></div>
+            <div style="flex:1;"><label>Temp. mínima (°C) <span style="color:var(--mu);font-size:10px;">optional</span></label><input id="nc-min" type="number" step="0.1" placeholder="e.g. 2" style="width:100%;"/></div>
+            <div style="flex:1;"><label>Temp. máxima (°C) <span style="color:var(--mu);font-size:10px;">optional</span></label><input id="nc-max" type="number" step="0.1" placeholder="e.g. 8" style="width:100%;"/></div>
           </div>
           <button class="green" onclick="createClient()" style="margin-top:12px;">Create Client</button>
           <div id="nc-st" style="font-size:12px;margin-top:6px;min-height:14px;"></div>
@@ -988,6 +988,7 @@ async function promptAssignSim(simId, iccid){
     :`<option value="">No GPS devices registered yet</option>`;
 
   document.getElementById("sim-assign-title").textContent=`Assign SIM — ${iccid}`;
+  document.getElementById("sim-assign-select-label").textContent="GPS Device (FMB920)";
   document.getElementById("sim-assign-select").innerHTML=`<option value="">— select GPS device —</option>${devOptions}`;
   document.getElementById("sim-assign-notes").value="";
   document.getElementById("sim-assign-st").textContent="";
@@ -1005,6 +1006,32 @@ async function promptAssignSim(simId, iccid){
   document.getElementById("sim-assign-overlay").style.display="flex";
 }
 function closeSIMAssignModal(){document.getElementById("sim-assign-overlay").style.display="none";}
+
+async function promptAssignSimToGps(imei, label){
+  let sims=[];
+  try{sims=await fetch(`${API}/admin/sims`,ahNoBody()).then(r=>r.json());}catch(e){}
+  const freeSims=sims.filter(s=>!s.assigned_imei);
+  const simOptions=freeSims.length
+    ?freeSims.map(s=>`<option value="${s.id}">${s.iccid}${s.phone_number?" · "+s.phone_number:""}${s.carrier?" ("+s.carrier+")":""}</option>`).join("")
+    :`<option value="">No free SIM cards registered</option>`;
+  document.getElementById("sim-assign-title").textContent=`Assign SIM → GPS: ${label||imei}`;
+  document.getElementById("sim-assign-select-label").textContent="SIM Card";
+  document.getElementById("sim-assign-select").innerHTML=`<option value="">— select SIM card —</option>${simOptions}`;
+  document.getElementById("sim-assign-notes").value="";
+  document.getElementById("sim-assign-st").textContent="";
+  document.getElementById("sim-assign-save").onclick=async()=>{
+    const simId=document.getElementById("sim-assign-select").value;
+    const notes=document.getElementById("sim-assign-notes").value.trim();
+    if(!simId){document.getElementById("sim-assign-st").textContent="Select a SIM card.";return;}
+    try{
+      const r=await fetch(`${API}/admin/sims/${simId}/assign`,{method:"POST",...ah(),body:JSON.stringify({imei,notes})});
+      if(!r.ok){const e=await r.json().catch(()=>({}));document.getElementById("sim-assign-st").textContent="Error: "+(e.detail||r.status);return;}
+      closeSIMAssignModal();
+      renderAlmacen();
+    }catch(e){document.getElementById("sim-assign-st").textContent="Network error.";}
+  };
+  document.getElementById("sim-assign-overlay").style.display="flex";
+}
 
 async function unassignSim(simId){
   if(!confirm("Detach this SIM from its current device?\n\nThe assignment history is kept.")) return;
@@ -1195,19 +1222,19 @@ function filterClients(){
 async function createClient(){
   const id=document.getElementById("nc-id").value.trim();
   const pw=document.getElementById("nc-pw").value;
-  const minT=parseFloat(document.getElementById("nc-min").value)||2.0;
-  const maxT=parseFloat(document.getElementById("nc-max").value)||8.0;
+  const minRaw=document.getElementById("nc-min").value.trim();
+  const maxRaw=document.getElementById("nc-max").value.trim();
+  const minT=minRaw!==""?parseFloat(minRaw):null;
+  const maxT=maxRaw!==""?parseFloat(maxRaw):null;
   const st=document.getElementById("nc-st");
   if(!id){st.style.color="var(--red)";st.textContent="Enter a client ID.";return;}
   if(pw.length<4){st.style.color="var(--red)";st.textContent="Password must be ≥ 4 chars.";return;}
-  if(minT>=maxT){st.style.color="var(--red)";st.textContent="Min temp must be less than max temp.";return;}
+  if(minT!=null&&maxT!=null&&minT>=maxT){st.style.color="var(--red)";st.textContent="Min temp must be less than max temp.";return;}
   try{
     const r=await fetch(`${API}/admin/clients`,{method:"POST",...ah(),body:JSON.stringify({client_id:id,password:pw,min_temp:minT,max_temp:maxT})});
     if(r.ok){
       st.style.color="var(--green)";st.textContent=`✓ Client "${id}" created.`;
-      ["nc-id","nc-pw"].forEach(k=>document.getElementById(k).value="");
-      document.getElementById("nc-min").value="2.0";
-      document.getElementById("nc-max").value="8.0";
+      ["nc-id","nc-pw","nc-min","nc-max"].forEach(k=>document.getElementById(k).value="");
       await loadClients();
     } else {
       const d=await r.json().catch(()=>({}));
@@ -1931,7 +1958,7 @@ function renderAlmacen(){
         <td><span class="badge ${lastCls}">${lastLabel}</span></td>
         <td style="font-size:11px;">${d.battery_level!=null?d.battery_level+"%":"—"}</td>
         <td style="font-size:11px;color:var(--mu);">${d.notes||"—"}</td>
-        <td><button class="sm" style="margin:0;background:var(--acc);color:#0d1117;" onclick="openAlmacenForm('${d.imei}','${d.sensor_id}','${d.client_id||""}')">✏ Assign</button></td>
+        <td style="display:flex;gap:4px;align-items:center;"><button class="sm" style="margin:0;background:var(--acc);color:#0d1117;" onclick="openAlmacenForm('${d.imei}','${d.sensor_id}','${d.client_id||""}')">✏ Assign</button><button class="sm sec" style="margin:0;" onclick="promptAssignSimToGps('${d.imei}','${d.serial_number||d.sensor_id}')">📶 SIM</button></td>
       </tr>`;
     }).join("");
   }
@@ -2333,7 +2360,7 @@ window.addEventListener("load",()=>{
 <div id="sim-assign-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:#1a1f2e;border:1px solid #2d3748;border-radius:12px;padding:24px;width:400px;max-width:92vw;">
     <h3 id="sim-assign-title" style="margin:0 0 16px;font-size:14px;color:#e2e8f0;"></h3>
-    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">GPS Device (FMB920)</label>
+    <label id="sim-assign-select-label" style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">GPS Device (FMB920)</label>
     <select id="sim-assign-select" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2d3748;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:13px;margin-bottom:12px;"></select>
     <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Notes (optional)</label>
     <input id="sim-assign-notes" type="text" placeholder="e.g. Replaced broken SIM" style="width:100%;box-sizing:border-box;background:#0d1117;border:1px solid #2d3748;border-radius:6px;padding:7px 10px;color:#e2e8f0;font-size:13px;margin-bottom:4px;"/>

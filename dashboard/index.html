@@ -1603,8 +1603,8 @@ function _buildMergedDevices(){
       stable_id:dev.imei,
       sensor_id:dev.sensor_id,
       serial:cleanGpsSerial(gpsSerialRaw||dev.sensor_id||dev.imei),
-      device_label:"GPS-"+cleanGpsSerial(gpsSerialRaw||dev.sensor_id||dev.imei),
-      device_secondary:eye?("🌡️ "+(eyeSerialRaw||"—")):"",
+      device_label:"GPSº "+cleanGpsSerial(gpsSerialRaw||dev.sensor_id||dev.imei),
+      device_secondary:eye?("🌡️ Sº "+(eyeSerialRaw||"—")):"",
       eye:eye||null,
       plate:dev.plate||gFd.plate||"",
       driver_name:gFd.driver_name||(eFd?eFd.driver_name:"")||"",
@@ -1798,7 +1798,7 @@ function renderDeviceTiles(gpsDevs,eyeSens){
     // Client-facing identifiers: prefer serial_number; fall back to sensor_health serial, then sensor_id
     const shEntry=(shData.find(s=>s.sensor_id===dev.sensor_id)||{});
     const gpsSerial = cleanGpsSerial(dev.serial_number||shEntry.serial_number||dev.sensor_id||dev.imei);
-    const gpsLabel  = `GPS-${gpsSerial}`;
+    const gpsLabel  = `GPSº ${gpsSerial}`;
     const eyeSerial = eye ? (eye.serial_number || eye.label || "") : "";
     const eyeDisplay = eye ? (eyeSerial || "—") : "";
     return`<div style="background:var(--sf2);border:1px solid ${isBreach?"var(--red)":"var(--bdr)"};border-radius:10px;padding:14px;display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;">
@@ -1878,7 +1878,7 @@ function renderFleetTable(){
     if(elapsed_mins!=null) status=elapsed_mins<10?"online":(elapsed_mins<60?"warning":"offline");
     merged.push({
       _row_key:"gps:"+dev.imei,
-      device_label:`GPS-${serial}`,
+      device_label:`GPSº ${serial}`,
       device_secondary:eye?(eyeSerial?`🌡️ ${eyeSerial}`:eye?"🌡️ —":""):"",
       plate:dev.plate||gFd.plate||"",
       driver_name:gFd.driver_name||(eFd?eFd.driver_name:"")||"",
@@ -2055,8 +2055,8 @@ function renderStatusBanner(){
       const gps=_gpsDevsCache.find(d=>d.sensor_id===sid);
       const eye=_eyeSensCache.find(e=>e.mac_address===sid);
       const plate=fd.plate||(gps?gps.plate:"")||"";
-      const serial=gps?`GPS-${cleanGpsSerial(gps.serial_number||gps.sensor_id)}`:(eye?(eye.serial_number||eye.label||""):"");
-      return plate?`🚛 ${plate}`+(serial?` (${serial})`:""):(serial||`GPS-${cleanGpsSerial(sid)}`);
+      const serial=gps?`GPSº ${cleanGpsSerial(gps.serial_number||gps.sensor_id)}`:(eye?("Sº "+(eye.serial_number||eye.label||"—")):"");
+      return plate?`🚛 ${plate}`+(serial?` (${serial})`:""):(serial||`GPSº ${cleanGpsSerial(sid)}`);
     });
     banner.style.borderColor="#d29922";banner.style.background="#d2992208";
     icon.textContent="📡";title.style.color="var(--yellow)";
@@ -2130,7 +2130,7 @@ function _prettyLabel(sid){
   if(gps){
     const serial=cleanGpsSerial(gps.serial_number||gps.sensor_id||gps.imei);
     const plate=gps.plate||(fleetData.find(f=>f.sensor_id===sid)||{}).plate||"";
-    return plate?`${plate} (${serial})`:"GPS-"+serial;
+    return plate?`${plate} (${serial})`:"GPSº "+serial;
   }
   // Check EYE sensors — sensor_id may be mac_address
   const eye=_eyeSensCache.find(e=>e.mac_address===sid);
@@ -2138,8 +2138,8 @@ function _prettyLabel(sid){
     const serial=eye.serial_number||eye.label||"";
     const pairedGps=eye.device_imei?_gpsDevsCache.find(d=>d.imei===eye.device_imei):null;
     const plate=pairedGps?pairedGps.plate:"";
-    if(plate) return serial?`${plate} (${serial})`:plate;
-    return serial||"EYE Sensor";
+    if(plate) return serial?`${plate} (Sº ${serial})`:plate;
+    return "Sº "+(serial||"—");
   }
   return sid;
 }
@@ -2376,11 +2376,11 @@ async function loadAlarmRules(){
     const rules=await apiFetchJson(`${API}/alarm_rules/${client}`);
     const el=document.getElementById("alarm-rules-list");
     if(!el)return;
-    const _gpsOpts=()=>_gpsDevsCache.map(d=>{const sn=cleanGpsSerial(d.serial_number||d.sensor_id);const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;return`<option value="${d.sensor_id}">${lbl}</option>`;}).join("");
+    const _gpsOpts=()=>_gpsDevsCache.map(d=>{const sn=cleanGpsSerial(d.serial_number||d.sensor_id);const lbl=d.plate?`${d.plate} (GPSº ${sn})`:`GPSº ${sn}`;return`<option value="${d.sensor_id}">${lbl}</option>`;}).join("");
     if(!rules.length){el.innerHTML='<div class="empty">No alarm rules yet — create one using the Create Rule tab</div>';
       // Still populate selectors even when no rules exist
       const selE=document.getElementById("ar-sensor");
-      if(selE) selE.innerHTML=`<option value="">All sensors</option>`+_gpsOpts()+_eyeSensCache.map(s=>{const sn=s.serial_number||s.label||"EYE Sensor";const p=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;const lbl=p&&p.plate?`${p.plate} (${sn})`:sn;return`<option value="${s.mac_address}">${lbl}</option>`;}).join("");
+      if(selE) selE.innerHTML=`<option value="">All sensors</option>`+_gpsOpts()+_eyeSensCache.map(s=>{const sn="Sº "+(s.serial_number||s.label||"—");const p=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;const lbl=p&&p.plate?`${p.plate} (${sn})`:sn;return`<option value="${s.mac_address}">${lbl}</option>`;}).join("");
       const selG=document.getElementById("ar-gps-sensor");
       if(selG) selG.innerHTML=`<option value="">All vehicles</option>`+_gpsOpts();
       return;}
@@ -2388,7 +2388,7 @@ async function loadAlarmRules(){
     const sel=document.getElementById("ar-sensor");
     if(sel){
       sel.innerHTML=`<option value="">All sensors</option>`+_gpsOpts()+_eyeSensCache.map(s=>{
-        const sn=s.serial_number||s.label||"EYE Sensor";
+        const sn="Sº "+(s.serial_number||s.label||"—");
         const paired=s.device_imei?_gpsDevsCache.find(d=>d.imei===s.device_imei):null;
         const lbl=paired&&paired.plate?`${paired.plate} (${sn})`:sn;
         return`<option value="${s.mac_address}">${lbl}</option>`;
@@ -2433,7 +2433,7 @@ function updateAlarmTypeUI(){
     if(sel){
       sel.innerHTML=`<option value="">All vehicles</option>`+_gpsDevsCache.map(d=>{
         const sn=cleanGpsSerial(d.serial_number||d.sensor_id);
-        const lbl=d.plate?`${d.plate} (GPS-${sn})`:`GPS-${sn}`;
+        const lbl=d.plate?`${d.plate} (GPSº ${sn})`:`GPSº ${sn}`;
         return`<option value="${d.sensor_id}">${lbl}</option>`;
       }).join("");
     }
@@ -2906,13 +2906,13 @@ async function loadSensorAssignTree(){
       gpsSel.innerHTML=`<option value="">— ${lang==="es"?"selecciona dispositivo GPS":"select GPS device"} —</option>`+
         gpsDevices.map(d=>{
           const sn=cleanGpsSerial(d.serial_number||d.sensor_id||d.imei);
-          return `<option value="${d.imei}">GPS-${sn}${d.plate?` (${d.plate})`:""}</option>`;
+          return `<option value="${d.imei}">GPSº ${sn}${d.plate?` (${d.plate})`:""}</option>`;
         }).join("");
     }
     if(eyeSel){
       eyeSel.innerHTML=`<option value="">— ${lang==="es"?"sin sensor EYE":"no EYE sensor"} —</option>`+
         eyeSensors.map(s=>{
-          const sn=s.serial_number||s.label||"EYE Sensor";
+          const sn="Sº "+(s.serial_number||s.label||"—");
           return `<option value="${s.mac_address}">${sn}${s.device_imei?` · ${lang==="es"?"asignado":"paired"}`:""}</option>`;
         }).join("");
     }
@@ -2920,9 +2920,12 @@ async function loadSensorAssignTree(){
     // Build current assignment map: imei → assignment
     const vaMap={};for(const va of vaList)vaMap[va.imei]=va;
 
-    // Build EYE sensor map: device_imei → eye sensor
+    // Build EYE sensor map: device_imei → eye sensor (from admin assignment)
     const eyeByImei={};
     for(const s of eyeSensors){if(s.device_imei)eyeByImei[s.device_imei]=s;}
+    // Also build mac → eye sensor map for client-side vehicle_assignments fallback
+    const eyeByMac={};
+    for(const s of eyeSensors){eyeByMac[s.mac_address]=s;}
 
     let html="";
     if(gpsDevices.length){
@@ -2933,7 +2936,8 @@ async function loadSensorAssignTree(){
         const lastMins=dev.last_seen?Math.round((now-new Date(dev.last_seen+"Z"))/60000):null;
         const statusLabel=lastMins==null?"unknown":lastMins<10?"online":lastMins<60?"warning":"offline";
         const statusCol=statusLabel==="online"?"var(--green)":statusLabel==="warning"?"var(--yellow)":statusLabel==="offline"?"var(--red)":"var(--mu)";
-        const eye=eyeByImei[dev.imei];
+        // eyeByImei covers admin-assigned sensors; fall back to vehicle_assignments eye_mac
+        const eye=eyeByImei[dev.imei]||(vaMap[dev.imei]?.eye_mac?eyeByMac[vaMap[dev.imei].eye_mac]:null);
         const va=vaMap[dev.imei];
         const gpsSerial=cleanGpsSerial(dev.serial_number||dev.sensor_id||dev.imei);
         const eyeSerial=eye?(eye.serial_number||eye.label||""):"";
@@ -2952,11 +2956,11 @@ async function loadSensorAssignTree(){
           <div style="padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:12px;">
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="color:var(--mu);width:56px;flex-shrink:0;">📟 GPS</span>
-              <span style="font-weight:600;font-family:monospace;">GPS-${gpsSerial}</span>
+              <span style="font-weight:600;font-family:monospace;">GPSº ${gpsSerial}</span>
             </div>
             ${eye?`<div style="display:flex;align-items:center;gap:8px;">
-              <span style="color:var(--mu);width:56px;flex-shrink:0;">🌡️ Sonda</span>
-              <span style="font-weight:600;font-family:monospace;">${eyeSerial}</span>
+              <span style="color:var(--mu);width:56px;flex-shrink:0;">🌡️ Sº</span>
+              <span style="font-weight:600;font-family:monospace;">${eyeSerial||"—"}</span>
               ${eye.battery_level!=null?`<span style="font-size:10px;color:var(--mu);">🔋${eye.battery_level}%</span>`:""}
             </div>`:""}
             ${va&&va.driver_name?`<div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--mu);width:56px;">👤</span><span>${va.driver_name}</span></div>`:""}
@@ -3046,12 +3050,12 @@ async function openEditVa(id,plate,imei,eyeMac,driver,notes){
     const imeiSel=document.getElementById("eva-imei");
     imeiSel.innerHTML=gpsDevices.map(d=>{
       const sn=cleanGpsSerial(d.serial_number||d.sensor_id||d.imei);
-      return `<option value="${d.imei}" ${d.imei===imei?"selected":""}>GPS-${sn}${d.plate?` (${d.plate})`:""}</option>`;
+      return `<option value="${d.imei}" ${d.imei===imei?"selected":""}>GPSº ${sn}${d.plate?` (${d.plate})`:""}</option>`;
     }).join("");
     const eyeSel=document.getElementById("eva-eye");
     eyeSel.innerHTML=`<option value="">— ${lang==="es"?"sin sensor EYE":"no EYE sensor"} —</option>`+
       eyeSensors.map(s=>{
-        const sn=s.serial_number||s.label||"EYE Sensor";
+        const sn="Sº "+(s.serial_number||s.label||"—");
         return `<option value="${s.mac_address}" ${s.mac_address===eyeMac?"selected":""}>${sn}</option>`;
       }).join("");
   }catch(e){}
@@ -3152,13 +3156,13 @@ async function openReactivate(plate,driver){
     }else{
       sel.innerHTML=avail.map(d=>{
         const sn=cleanGpsSerial(d.serial_number||d.sensor_id||d.imei);
-        return `<option value="${d.imei}">GPS-${sn}</option>`;
+        return `<option value="${d.imei}">GPSº ${sn}</option>`;
       }).join("");
     }
     const eyeSel=document.getElementById("ract-eye");
     eyeSel.innerHTML=`<option value="">— ${lang==="es"?"sin sensor EYE":"no EYE sensor"} —</option>`+
       eyeSensors.map(s=>{
-        const sn=s.serial_number||s.label||"EYE Sensor";
+        const sn="Sº "+(s.serial_number||s.label||"—");
         return `<option value="${s.mac_address}">${sn}</option>`;
       }).join("");
   }catch(e){}
@@ -3908,9 +3912,9 @@ async function generatePdfForDays(overrideFrom, overrideTo){
     const excursionLabel=excursionMins<1?"< 1 min":excursionMins<60?Math.round(excursionMins)+"m":Math.floor(excursionMins/60)+"h "+Math.round(excursionMins%60)+"m";
     const relevantTrips=pdfTrips;
     const tripRows=relevantTrips.length
-      ?relevantTrips.map((trp,i)=>`<tr><td>${window.t("pdf_col_trip")} ${i+1}</td><td>${trp.points[0].sensor_id}</td><td>${trp.points[0].plate||"—"}</td><td>${fDT(trp.start.timestamp)}</td><td>${trp.durH}h ${trp.durM}m</td><td>${trp.km} km</td><td>${trp.minTemp}–${trp.maxTemp}°C</td><td style="color:${trp.breaches?"#c0392b":"#27ae60"}">${trp.breaches?"⚠ "+trp.breaches:window.t("pdf_ok")}</td></tr>`).join("")
+      ?relevantTrips.map((trp,i)=>`<tr><td>${window.t("pdf_col_trip")} ${i+1}</td><td>${_prettyLabel(trp.points[0].sensor_id)||trp.points[0].sensor_id}</td><td>${trp.points[0].plate||"—"}</td><td>${fDT(trp.start.timestamp)}</td><td>${trp.durH}h ${trp.durM}m</td><td>${trp.km} km</td><td>${trp.minTemp}–${trp.maxTemp}°C</td><td style="color:${trp.breaches?"#c0392b":"#27ae60"}">${trp.breaches?"⚠ "+trp.breaches:window.t("pdf_ok")}</td></tr>`).join("")
       :`<tr><td colspan='8' style='color:#888;'>${window.t("pdf_no_trips")}</td></tr>`;
-    const sensorLabel=sensor?`${t("pdf_sensor")} <b>${sensor}</b>`:t("pdf_all_sensors");
+    const sensorLabel=sensor?`${t("pdf_sensor")} <b>${_prettyLabel(sensor)||sensor}</b>`:t("pdf_all_sensors");
     const en12830txt=lang==="es"
       ?"Este informe se genera de acuerdo con <b>EN 12830</b> — Registradores de temperatura para el transporte, almacenamiento y distribución de alimentos refrigerados, congelados y ultracongelados."
       :"This report is generated in accordance with <b>EN 12830</b> — Temperature recorders for the transport, storage and distribution of chilled, frozen, deep-frozen/quick-frozen food and ice cream.";
@@ -3940,7 +3944,7 @@ async function generatePdfForDays(overrideFrom, overrideTo){
     <table><thead><tr><th>${t("pdf_col_trip")}</th><th>${t("pdf_col_sensor")}</th><th>${t("pdf_col_plate")}</th><th>${t("pdf_col_start")}</th><th>${t("pdf_col_dur")}</th><th>${t("pdf_col_dist")}</th><th>${t("pdf_col_temp_range")}</th><th>${t("pdf_col_oor")}</th></tr></thead>
     <tbody>${tripRows}</tbody></table>
     ${rangeAlerts.length
-      ?`<h2>${t("temp_alert_title")} (${rangeAlerts.length})</h2><table><thead><tr><th>${t("pdf_col_sensor")}</th><th>${t("pdf_col_dir")}</th><th>${t("pdf_col_temp")}</th><th>${t("pdf_col_time")}</th></tr></thead><tbody>${rangeAlerts.slice(0,50).map(a=>`<tr><td>${a.sensor_id}</td><td class="bad">${a.direction==="too_high"?t("pdf_too_high"):t("pdf_too_low")}</td><td class="bad">${a.temperature.toFixed(1)}°C</td><td>${a.timestamp.slice(0,16).replace("T"," ")}</td></tr>`).join("")}</tbody></table>`
+      ?`<h2>${t("temp_alert_title")} (${rangeAlerts.length})</h2><table><thead><tr><th>${t("pdf_col_sensor")}</th><th>${t("pdf_col_dir")}</th><th>${t("pdf_col_temp")}</th><th>${t("pdf_col_time")}</th></tr></thead><tbody>${rangeAlerts.slice(0,50).map(a=>`<tr><td>${_prettyLabel(a.sensor_id)||a.sensor_id}</td><td class="bad">${a.direction==="too_high"?t("pdf_too_high"):t("pdf_too_low")}</td><td class="bad">${a.temperature.toFixed(1)}°C</td><td>${a.timestamp.slice(0,16).replace("T"," ")}</td></tr>`).join("")}</tbody></table>`
       :`<p style='color:#27ae60;font-weight:700;'>${t("pdf_no_alerts")}</p>`}
     <h2>${t("pdf_readings_hdr")} (${displayReadings.length} total${_csvIntervalMins>0?`, averaged every ${_csvIntervalMins} min`:""}, ${t("pdf_showing")} ${Math.min(150,displayReadings.length)})</h2>
     <table><thead><tr><th>${t("pdf_col_sensor")}</th><th>Matrícula</th><th>${t("pdf_col_temp")}</th><th>${t("pdf_col_time")}</th><th>${t("pdf_col_status")}</th></tr></thead>
@@ -3949,7 +3953,7 @@ async function generatePdfForDays(overrideFrom, overrideTo){
       const gps=_gpsDevsCache.find(d=>d.sensor_id===r.sensor_id);
       const eye=_eyeSensCache.find(e=>e.mac_address===r.sensor_id);
       const pairedGps=eye&&eye.device_imei?_gpsDevsCache.find(d=>d.imei===eye.device_imei):null;
-      const sSerial=gps?cleanGpsSerial(gps.serial_number||gps.sensor_id):(eye?(eye.serial_number||eye.label||"EYE Sensor"):r.sensor_id);
+      const sSerial=gps?("GPSº "+cleanGpsSerial(gps.serial_number||gps.sensor_id)):(eye?("Sº "+(eye.serial_number||eye.label||"—")):r.sensor_id);
       const sPlate=gps?gps.plate:(pairedGps?pairedGps.plate:"");
       return`<tr><td>${sSerial}</td><td>${sPlate||"—"}</td><td class="${bad?"bad":"ok"}">${r.temperature!=null?r.temperature.toFixed(1)+"°C":"—"}</td><td>${r.timestamp.slice(0,16).replace("T"," ")}</td><td class="${bad?"bad":"ok"}">${bad?t("pdf_oor_row"):t("pdf_ok")}</td></tr>`;
     }).join("")||`<tr><td colspan='5'>${lang==="es"?"Sin lecturas":"No readings"}</td></tr>`}</tbody></table>
@@ -4096,6 +4100,8 @@ loadColVisibility();
 setLang(lang);
 document.getElementById("login-cid").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("login-pw").focus();});
 document.getElementById("login-pw").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+// Auto-fill client ID from ?client= URL param (used by admin "View Dashboard" link)
+(()=>{const p=new URLSearchParams(window.location.search).get("client");if(p){document.getElementById("login-cid").value=p;document.getElementById("login-pw").focus();}})();
 
 setInterval(()=>{ if(client){ loadSensorHealth(); loadReadings(); loadFleetStatus(); } },5000);
 
@@ -4121,7 +4127,7 @@ async function loadClientBleSensors(){
       list.innerHTML=sensors.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr);">
         <div class="sdot ${s.last_seen?(new Date()-new Date(s.last_seen+"Z"))<600000?"online":"offline":"unknown"}"></div>
         <div style="flex:1;">
-          <div style="font-size:13px;font-weight:600;">${s.serial_number||s.label||"EYE Sensor"}</div>
+          <div style="font-size:13px;font-weight:600;">Sº ${s.serial_number||s.label||"—"}</div>
           <div style="font-size:11px;color:var(--mu);">${s.device_imei?"GPS: "+s.device_imei+(s.gps_sensor_id?" ("+s.gps_sensor_id+")":""):"No GPS device assigned"}${s.battery_level!=null?" · 🔋"+s.battery_level+"%":""}</div>
         </div>
       </div>`).join("");
@@ -4132,7 +4138,7 @@ async function loadClientBleSensors(){
     if(window.ENABLE_REASSIGN){
       const rasSensor=document.getElementById("ble-ras-sensor");
       if(rasSensor) rasSensor.innerHTML='<option value="">— select BLE sensor —</option>'+
-        sensors.map(s=>`<option value="${s.id}">${s.serial_number||s.label||"EYE Sensor"}</option>`).join("");
+        sensors.map(s=>`<option value="${s.id}">Sº ${s.serial_number||s.label||"—"}</option>`).join("");
       const rasDevice=document.getElementById("ble-ras-device");
       if(rasDevice) rasDevice.innerHTML='<option value="">— select GPS device —</option>'+
         gpsDevs.map(d=>`<option value="${d.imei}">${d.imei}${d.plate?" ("+d.plate+")":""}</option>`).join("");
