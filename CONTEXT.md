@@ -289,6 +289,8 @@ verify on Railway staging URL → make deploy-prod (requires manual confirm)
 ## Critical Bugs Fixed (2026-05-24)
 
 - **index.html API URL** was hardcoded to `http://localhost:8080` — fixed to dynamic (`window.location.origin` in production, localhost fallback in dev). This was a production blocker — the dashboard would never have connected to Railway.
+- **Railway start command missing venv activation** — `railway.toml` ran `uvicorn` directly without activating `/opt/venv`, so all Python packages were invisible and the app crashed on every boot. Fixed: `startCommand = ". /opt/venv/bin/activate && uvicorn ..."`. Both production and staging confirmed healthy after fix (2026-05-24).
+- **Alarm rules sensor dropdown** still showed `mac_address` as fallback label — fixed to `"EYE Sensor"`.
 
 ---
 
