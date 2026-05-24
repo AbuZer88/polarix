@@ -2,6 +2,9 @@
 Polarix - Alert Engine
 Channels: WhatsApp, SMS (Twilio), Email (SMTP/Gmail)
 Alert types: temperature breach, sensor offline, battery low
+
+Email alerts activate automatically when SMTP_USER and SMTP_PASS are set in .env.
+No code changes needed — see .env.example for Gmail App Password setup instructions.
 """
 import os
 import smtplib

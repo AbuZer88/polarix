@@ -175,6 +175,30 @@ For a fresh launch this is fine; new data writes straight to Postgres on Railway
 
 ---
 
+## How to Pause Railway (Save Costs During Pre-Launch)
+
+Suspending a service preserves all data, environment variables, and config. No charges while suspended. Takes ~30 seconds to resume.
+
+**To pause:**
+1. Go to https://railway.com → your project
+2. Click the service (`polarix` or `polarix-staging`)
+3. **Settings** tab → scroll to **Danger Zone** → click **Suspend Service**
+4. Confirm — service stops immediately, billing stops, data is preserved
+
+**To resume:**
+1. Same location → **Resume Service**
+2. Railway rebuilds and redeploys automatically (~2–3 minutes)
+3. Verify with: `curl https://polarix-production.up.railway.app/health`
+
+**When to use this:**
+- Pre-launch: no paying clients yet → pause production when not testing
+- Weekend / holiday: pause if no devices are sending data
+- Both prod + staging can be paused independently
+
+**Important:** SQLite DB is stored on a Railway volume. It persists across suspensions. If you switch to PostgreSQL later, the managed DB is always-on regardless of service state.
+
+---
+
 ## What you CANNOT do via me (the assistant)
 
 1. Push the repo to GitHub on your behalf (needs your GitHub credentials)

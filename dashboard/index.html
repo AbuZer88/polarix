@@ -308,6 +308,63 @@
 
     @media(max-width:900px) { #sidebar{width:150px;} .c4,.c3{grid-template-columns:1fr 1fr;} }
     @media(max-width:640px) { #sidebar{display:none;} .c4,.c3,.c2{grid-template-columns:1fr;} .g2{grid-template-columns:1fr;} }
+
+    /* ── BOTTOM NAV (mobile) ── */
+    #bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--sf);border-top:1px solid var(--bdr);z-index:300;justify-content:space-around;align-items:center;padding:0 2px;}
+    .bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:1;padding:4px 2px;cursor:pointer;border-radius:8px;background:none;border:none;color:var(--mu);font-size:9px;font-weight:600;min-height:44px;margin:0;width:auto;transition:.12s;letter-spacing:.2px;}
+    .bn-item .bn-icon{font-size:20px;line-height:1.1;}
+    .bn-item.active{color:var(--acc);}
+    .bn-item:hover{background:var(--sf2);}
+
+    /* ── MOBILE LAYOUT ── */
+    @media(max-width:640px){
+      /* Show bottom nav, hide top tab bar */
+      #bottom-nav{display:flex;}
+      header nav{display:none;}
+      /* Padding so last cards aren't hidden behind bottom nav */
+      #content{padding-bottom:72px;}
+      /* Tighten header */
+      header{padding:0 10px;gap:6px;}
+      .hlogo{font-size:14px;}
+      .client-chip{font-size:10px;padding:2px 7px;max-width:90px;overflow:hidden;text-overflow:ellipsis;}
+      .tz-pill{display:none;}
+      #sbadge{font-size:10px;padding:2px 7px;}
+      /* Map height on mobile */
+      #vmap{height:260px;}
+      /* Report modal → full screen sheet */
+      #report-modal{align-items:flex-end!important;}
+      #report-modal .modal-box{width:100vw!important;max-width:100vw!important;border-radius:14px 14px 0 0!important;max-height:88vh!important;}
+      #compliance-modal{align-items:flex-end!important;}
+      #compliance-modal .modal-box{width:100vw!important;max-width:100vw!important;border-radius:14px 14px 0 0!important;max-height:88vh!important;}
+      /* Report grid → single column on very narrow */
+      .report-grid{grid-template-columns:1fr!important;}
+      /* All standard buttons: 44px min touch target */
+      button:not(.ico):not(.sm):not(.bn-item):not(.lang-btn):not(.sb-map-btn){min-height:44px;}
+      button.sm{min-height:36px;}
+      /* Alarm rule form row */
+      .alarm-row-form{flex-direction:column;}
+      /* Assign form rows → stack */
+      .asgn-form-row{flex-direction:column;}
+      .asgn-form-row > div{min-width:unset;width:100%;}
+      /* Vehicle assignment cards → single column */
+      #sensor-assign-tree > div[style*="grid"]{grid-template-columns:1fr!important;}
+      /* Status banner → compact on mobile */
+      #status-banner{flex-direction:column;align-items:flex-start;gap:8px;}
+      #status-banner > div:last-child{text-align:left;align-self:stretch;}
+      /* Alert items wrap better */
+      .alert-item{flex-direction:column;align-items:flex-start;gap:4px;}
+      /* Add-contact row → stack */
+      .add-row{flex-direction:column;}
+      .add-row select,.add-row input{width:100%;}
+      .add-row button{width:100%;}
+      /* Tbl wrap already has overflow-x:auto — ensure touch scroll */
+      .tbl-wrap{-webkit-overflow-scrolling:touch;}
+      /* Sensor chips wrap */
+      .sensor-chips{gap:4px;}
+      .sensor-chip{font-size:10px;padding:2px 8px;}
+      /* Chart a bit shorter on mobile */
+      .chart-wrap{height:190px;}
+    }
   </style>
 </head>
 <body>
@@ -354,17 +411,26 @@
   </div>
 </div>
 
+<!-- ── MOBILE BOTTOM NAV ── -->
+<nav id="bottom-nav" role="navigation" aria-label="Mobile navigation">
+  <button class="bn-item active" onclick="showTab('overview',null,'overview')" id="bn-overview"><span class="bn-icon">🏠</span><span data-i18n="tab_overview">Overview</span></button>
+  <button class="bn-item" onclick="showTab('map',null,'map')" id="bn-map"><span class="bn-icon">🗺️</span><span data-i18n="tab_map">Map</span></button>
+  <button class="bn-item" onclick="showTab('history',null,'history')" id="bn-history"><span class="bn-icon">📈</span><span data-i18n="tab_history">History</span></button>
+  <button class="bn-item" onclick="showTab('vehicles',null,'vehicles')" id="bn-vehicles"><span class="bn-icon">🚛</span><span data-i18n="tab_vehicles">Vehicles</span></button>
+  <button class="bn-item" onclick="showTab('settings',null,'settings')" id="bn-settings"><span class="bn-icon">⚙️</span><span data-i18n="tab_settings">Settings</span></button>
+</nav>
+
 <!-- ══ APP ══ -->
 <div id="app">
   <header>
     <span class="hlogo">❄️ Polarix</span>
     <span class="client-chip" id="client-chip">—</span>
     <nav>
-      <button class="active" onclick="showTab('overview',this)" data-i18n="tab_overview">Overview</button>
-      <button onclick="showTab('map',this)" data-i18n="tab_map">Map</button>
-      <button onclick="showTab('history',this)" data-i18n="tab_history">History</button>
-      <button onclick="showTab('vehicles',this)" data-i18n="tab_vehicles">Vehicles</button>
-      <button onclick="showTab('settings',this)" data-i18n="tab_settings">Settings</button>
+      <button class="active" onclick="showTab('overview',this,'overview')" data-i18n="tab_overview">Overview</button>
+      <button onclick="showTab('map',this,'map')" data-i18n="tab_map">Map</button>
+      <button onclick="showTab('history',this,'history')" data-i18n="tab_history">History</button>
+      <button onclick="showTab('vehicles',this,'vehicles')" data-i18n="tab_vehicles">Vehicles</button>
+      <button onclick="showTab('settings',this,'settings')" data-i18n="tab_settings">Settings</button>
     </nav>
     <div class="hdr-r">
       <div class="tz-pill">
@@ -1471,11 +1537,14 @@ async function loadNotifStatus(){
 }
 
 // ── Tab navigation ────────────────────────────────────────────────────────────
-function showTab(name,btn){
+function showTab(name,btn,bnId){
   document.querySelectorAll(".tab-pane").forEach(p=>p.classList.remove("active"));
-  document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll("header nav button").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll("#bottom-nav .bn-item").forEach(b=>b.classList.remove("active"));
   document.getElementById("tab-"+name).classList.add("active");
   if(btn) btn.classList.add("active");
+  const bnTarget=document.getElementById("bn-"+(bnId||name));
+  if(bnTarget) bnTarget.classList.add("active");
   if(name==="map"){ setTimeout(()=>map&&map.invalidateSize(),100); loadMapForSelectedDays(); }
   if(name==="history"){ loadWeeklyHistory(); }
   if(name==="vehicles"){ loadSensorAssignTree(); loadInactiveVehicles(); loadClientBleSensors(); }
@@ -1604,7 +1673,7 @@ function goToMapForSensor(sid, event){
   const sf=document.getElementById("map-sensor-filter");
   if(sf) sf.value=sid;
   const mapBtn=document.querySelector("nav button:nth-child(2)");
-  showTab("map", mapBtn);
+  showTab("map", mapBtn, "map");
   if(mapBtn) mapBtn.classList.add("active");
   document.querySelectorAll("nav button").forEach(b=>{if(b!==mapBtn)b.classList.remove("active");});
 }
@@ -2435,7 +2504,7 @@ async function generateReport(){
   const dateStr=(from||"").slice(0,10);
   try{
     if(_reportType==="temp_pdf"){
-      await generatePdfForDays(); closeReportModal();
+      await generatePdfForDays(from,to); closeReportModal();
     } else if(_reportType==="temp_csv_adv"){
       st.textContent=t("rpt_status_csv_building");
       await generateTempCsvAdv(sensor,from,to,_csvIntervalMins);
@@ -2982,7 +3051,7 @@ async function saveEditVa(){
 function goToVehiclesTab(){
   // Vehicles tab is the 4th nav button (Overview, Map, History, Vehicles, Settings)
   const btns=document.querySelectorAll("nav button");
-  if(btns[3])showTab("vehicles",btns[3]);
+  if(btns[3])showTab("vehicles",btns[3],"vehicles");
 }
 
 async function checkUnassignedDevices(){
@@ -3638,16 +3707,27 @@ function downloadExportByType(){
 }
 
 // ── PDF Report (sensor + date-range aware) ────────────────────────────────────
-async function generatePdfForDays(){
+async function generatePdfForDays(overrideFrom, overrideTo){
   if(!client)return;
-  const sensor=document.getElementById("map-sensor-filter").value;
-  const sorted=[...mapSelectedDays].sort((a,b)=>a-b);
-  const maxOff=Math.max(...sorted),minOff=Math.min(...sorted);
-  const fromD=new Date(mapAnchorDate);fromD.setDate(fromD.getDate()-maxOff);
-  const toD=new Date(mapAnchorDate);toD.setDate(toD.getDate()-minOff);
-  const fromStr=fromD.toISOString().slice(0,10)+"T00:00:00";
-  const toStr=toD.toISOString().slice(0,10)+"T23:59:59";
-  const dateRange=fromD.toISOString().slice(0,10)+(maxOff!==minOff?" → "+toD.toISOString().slice(0,10):"");
+  let fromStr, toStr, dateRange;
+  if(overrideFrom){
+    // Called from report modal with explicit date range (history tab context)
+    fromStr=overrideFrom.length===10?overrideFrom+"T00:00:00":overrideFrom;
+    toStr=(overrideTo||overrideFrom).length===10?(overrideTo||overrideFrom)+"T23:59:59":(overrideTo||overrideFrom);
+    dateRange=fromStr.slice(0,10)+(toStr.slice(0,10)!==fromStr.slice(0,10)?" → "+toStr.slice(0,10):"");
+  } else {
+    // Called directly (e.g. history tab button) — use map tab's selected days
+    const sorted=[...mapSelectedDays].sort((a,b)=>a-b);
+    const maxOff=Math.max(...sorted),minOff=Math.min(...sorted);
+    const fromD=new Date(mapAnchorDate);fromD.setDate(fromD.getDate()-maxOff);
+    const toD=new Date(mapAnchorDate);toD.setDate(toD.getDate()-minOff);
+    fromStr=fromD.toISOString().slice(0,10)+"T00:00:00";
+    toStr=toD.toISOString().slice(0,10)+"T23:59:59";
+    dateRange=fromD.toISOString().slice(0,10)+(maxOff!==minOff?" → "+toD.toISOString().slice(0,10):"");
+  }
+  const sensor=_reportContext==="map"
+    ?(document.getElementById("map-sensor-filter")||{}).value||""
+    :(selectedHistSensor||"");
   const sensorLabel=sensor?`Sensor <b>${sensor}</b>`:"All sensors";
   // Fetch data filtered by sensor and date range
   let rdUrl=`${API}/readings/${client}?limit=2000&from_dt=${fromStr}&to_dt=${toStr}`;

@@ -1,5 +1,5 @@
 # Polarix — Full Project Context
-*Last updated: 2026-05-24 | For use in Claude Code sessions to resume work without re-reading the whole codebase.*
+*Last updated: 2026-05-24 (session 3) | For use in Claude Code sessions to resume work without re-reading the whole codebase.*
 
 ---
 
@@ -291,15 +291,17 @@ verify on Railway staging URL → make deploy-prod (requires manual confirm)
 - **index.html API URL** was hardcoded to `http://localhost:8080` — fixed to dynamic (`window.location.origin` in production, localhost fallback in dev). This was a production blocker — the dashboard would never have connected to Railway.
 - **Railway start command missing venv activation** — `railway.toml` ran `uvicorn` directly without activating `/opt/venv`, so all Python packages were invisible and the app crashed on every boot. Fixed: `startCommand = ". /opt/venv/bin/activate && uvicorn ..."`. Both production and staging confirmed healthy after fix (2026-05-24).
 - **Alarm rules sensor dropdown** still showed `mac_address` as fallback label — fixed to `"EYE Sensor"`.
+- **PDF date range bug** — `generatePdfForDays()` always used map tab's selected days regardless of context. When report opened from History tab, the history chart's date range was ignored. Fixed: function now accepts `overrideFrom`/`overrideTo` params; `generateReport()` passes context-correct dates from `_histDateRange()`.
 
 ---
 
-## Known Good State (as of 2026-05-24)
+## Known Good State (as of 2026-05-24 session 3)
 
 - All client-facing views show `serial_number` — no mac_address, no raw sensor_id
 - Count label shows correct "X online · Y offline" (GPS devices only, not EYE)
 - Chart x-axis shows `dd/mm HH:MM` (date + time)
 - PDF report includes Matrícula column; sensor column shows serial not sensor_id
+- PDF date range: fixed — history tab report now uses chart's date selection, not map's
 - Speed alarms: DB columns, backend check, notifier, frontend UI all complete
 - Alarm rules: support temperature + speed types, correct badge in list
 - Settings: accent color + sensor colors in Ajustes tab (moved from Profile modal)
@@ -307,6 +309,10 @@ verify on Railway staging URL → make deploy-prod (requires manual confirm)
 - Vehicles tab: professional vehicle cards (GPS serial, EYE serial, plate, status)
 - Admin: ✏️ edit buttons on GPS + EYE tables for post-registration serial edits
 - Admin: SIM assign uses dropdown modal (not `prompt()`)
+- Admin: create-client form has min_temp + max_temp fields with defaults (2.0 / 8.0)
+- Admin: client list pagination — Prev/Next, Page X/Y, total count
 - Staging: orange banner in both dashboards when ENVIRONMENT=staging
 - Offline/alert banner: shows plate+serial, not raw sensor_id
 - Alert history: uses `_prettyLabel()` for all entries; speed alerts show km/h + 🚗 badge
+- Mobile: bottom nav bar (5 tabs), full-screen modals, 44px touch targets, stacked forms
+- DEPLOY.md: Railway pause/resume instructions added
